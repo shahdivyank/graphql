@@ -1,0 +1,65 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+scalar UUID
+
+type User {
+  id: UUID!
+  name: String!
+  username: String!
+  bio: String!
+}
+
+type Comment {
+  id: UUID!
+  timestamp: Int!
+  user: User!
+  comment: String!
+}
+
+type Beat {
+  ID: UUID!
+  user: User!
+  location: String!
+  timestamp: Int!
+  song: String!
+  artist: String!
+  description: String!
+  comments: [Comment!]!
+  longitude: Float!
+  latitude: Float!
+}
+
+type Query {
+  beats: [Beat!]!
+  users: [User!]!
+  comments: [Comment!]!
+}
+
+input NewBeat {
+  user: String!
+  location: String!
+  song: String!
+  artist: String!
+  description: String!
+  longitude: Float!
+  latitude: Float!
+}
+
+input NewUser {
+  name: String!
+  username: String!
+  bio: String!
+}
+
+input NewComment {
+  user: String!
+  comment: String!
+}
+
+type Mutation {
+  beatdrop(input: NewBeat!): Beat!
+  add_new_user(input: NewUser!): User!
+  add_comment(input: NewComment!): Comment!
+}
