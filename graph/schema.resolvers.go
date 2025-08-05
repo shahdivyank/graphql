@@ -53,11 +53,8 @@ func (r *queryResolver) Comments(ctx context.Context) ([]*model.Comment, error) 
 	return r.comments, nil
 }
 
-// Mutation returns MutationResolver implementation.
+// DO NOT EDIT
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
-
-// Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
-
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
