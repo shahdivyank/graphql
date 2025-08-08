@@ -32,7 +32,7 @@ func (r *mutationResolver) AddBeat(ctx context.Context, input model.NewBeat) (*m
 		Location:    input.Location,
 		Longitude:   input.Longitude,
 		Latitude:    input.Latitude,
-		Timestamp: int32(time.Now().Unix()),
+		Timestamp:   int32(time.Now().Unix()),
 	}
 
 	r.beatdrops[id] = beatdrop

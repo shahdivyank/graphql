@@ -7,7 +7,7 @@ import (
 )
 
 type Beat struct {
-	ID          uuid.UUID  `json:"ID"`
+	ID          uuid.UUID  `json:"id"`
 	User        *User      `json:"user"`
 	Location    string     `json:"location"`
 	Timestamp   int32      `json:"timestamp"`

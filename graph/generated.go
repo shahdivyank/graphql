@@ -143,7 +143,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Beat.Description(childComplexity), true
 
-	case "Beat.ID":
+	case "Beat.id":
 		if e.complexity.Beat.ID == nil {
 			break
 		}
@@ -574,8 +574,8 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Beat_ID(ctx context.Context, field graphql.CollectedField, obj *model.Beat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beat_ID(ctx, field)
+func (ec *executionContext) _Beat_id(ctx context.Context, field graphql.CollectedField, obj *model.Beat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Beat_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -605,7 +605,7 @@ func (ec *executionContext) _Beat_ID(ctx context.Context, field graphql.Collecte
 	return ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Beat_ID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Beat_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Beat",
 		Field:      field,
@@ -1259,8 +1259,8 @@ func (ec *executionContext) fieldContext_Mutation_add_beat(ctx context.Context, 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Beat_ID(ctx, field)
+			case "id":
+				return ec.fieldContext_Beat_id(ctx, field)
 			case "user":
 				return ec.fieldContext_Beat_user(ctx, field)
 			case "location":
@@ -1466,8 +1466,8 @@ func (ec *executionContext) fieldContext_Query_beats(_ context.Context, field gr
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Beat_ID(ctx, field)
+			case "id":
+				return ec.fieldContext_Beat_id(ctx, field)
 			case "user":
 				return ec.fieldContext_Beat_user(ctx, field)
 			case "location":
@@ -1705,8 +1705,8 @@ func (ec *executionContext) fieldContext_Query_beatdrop(ctx context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ID":
-				return ec.fieldContext_Beat_ID(ctx, field)
+			case "id":
+				return ec.fieldContext_Beat_id(ctx, field)
 			case "user":
 				return ec.fieldContext_Beat_user(ctx, field)
 			case "location":
@@ -4164,8 +4164,8 @@ func (ec *executionContext) _Beat(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Beat")
-		case "ID":
-			out.Values[i] = ec._Beat_ID(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._Beat_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
