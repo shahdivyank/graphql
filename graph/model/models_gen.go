@@ -30,18 +30,18 @@ type Mutation struct {
 }
 
 type NewBeat struct {
-	User        string  `json:"user"`
-	Location    string  `json:"location"`
-	Song        string  `json:"song"`
-	Artist      string  `json:"artist"`
-	Description string  `json:"description"`
-	Longitude   float64 `json:"longitude"`
-	Latitude    float64 `json:"latitude"`
+	User        uuid.UUID `json:"user"`
+	Location    string    `json:"location"`
+	Song        string    `json:"song"`
+	Artist      string    `json:"artist"`
+	Description string    `json:"description"`
+	Longitude   float64   `json:"longitude"`
+	Latitude    float64   `json:"latitude"`
 }
 
 type NewComment struct {
-	User    string `json:"user"`
-	Comment string `json:"comment"`
+	User    uuid.UUID `json:"user"`
+	Comment string    `json:"comment"`
 }
 
 type NewUser struct {

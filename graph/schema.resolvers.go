@@ -8,13 +8,36 @@ import (
 	"context"
 	"fmt"
 	"graphql/graph/model"
+	"time"
 
 	"github.com/google/uuid"
 )
 
-// Beatdrop is the resolver for the beatdrop field.
-func (r *mutationResolver) Beatdrop(ctx context.Context, input model.NewBeat) (*model.Beat, error) {
-	panic(fmt.Errorf("not implemented: Beatdrop - beatdrop"))
+// AddBeat is the resolver for the add_beat field.
+func (r *mutationResolver) AddBeat(ctx context.Context, input model.NewBeat) (*model.Beat, error) {
+	id := uuid.New()
+
+	user, ok := r.users[input.User]
+
+	if !ok {
+		return nil, fmt.Errorf("user with ID %s not found", input.User)
+	}
+
+	beatdrop := &model.Beat{
+		ID:          id,
+		User:        user,
+		Song:        input.Song,
+		Artist:      input.Artist,
+		Description: input.Description,
+		Location:    input.Location,
+		Longitude:   input.Longitude,
+		Latitude:    input.Latitude,
+		Timestamp: int32(time.Now().Unix()),
+	}
+
+	r.beatdrops[id] = beatdrop
+
+	return beatdrop, nil
 }
 
 // AddNewUser is the resolver for the add_new_user field.
@@ -28,29 +51,80 @@ func (r *mutationResolver) AddNewUser(ctx context.Context, input model.NewUser) 
 		Bio:      input.Bio,
 	}
 
-	r.users = append(r.users, user)
+	r.users[id] = user
 
 	return user, nil
 }
 
 // AddComment is the resolver for the add_comment field.
 func (r *mutationResolver) AddComment(ctx context.Context, input model.NewComment) (*model.Comment, error) {
-	panic(fmt.Errorf("not implemented: AddComment - add_comment"))
+	user, ok := r.users[input.User]
+
+	if !ok {
+		return nil, fmt.Errorf("user with ID %s not found", input.User)
+	}
+
+	id := uuid.New()
+
+	comment := &model.Comment{
+		ID:        id,
+		Timestamp: int32(time.Now().Unix()),
+		User:      user,
+		Comment:   input.Comment,
+	}
+
+	r.comments = append(r.comments, comment)
+
+	return comment, nil
 }
 
 // Beats is the resolver for the beats field.
 func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
-	return r.beatdrops, nil
+	beatdrops := make([]*model.Beat, 0, len(r.beatdrops))
+
+	for _, beatdrop := range r.beatdrops {
+		beatdrops = append(beatdrops, beatdrop)
+	}
+
+	return beatdrops, nil
 }
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	return r.users, nil
+	users := make([]*model.User, 0, len(r.users))
+
+	for _, u := range r.users {
+		users = append(users, u)
+	}
+
+	return users, nil
 }
 
 // Comments is the resolver for the comments field.
 func (r *queryResolver) Comments(ctx context.Context) ([]*model.Comment, error) {
 	return r.comments, nil
+}
+
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	user, ok := r.users[id]
+
+	if !ok {
+		return nil, fmt.Errorf("user with ID %s not found", id)
+	}
+
+	return user, nil
+}
+
+// Beatdrop is the resolver for the beatdrop field.
+func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat, error) {
+	beatdrop, ok := r.beatdrops[id]
+
+	if !ok {
+		return nil, fmt.Errorf("user with ID %s not found", id)
+	}
+
+	return beatdrop, nil
 }
 
 // Mutation returns MutationResolver implementation.

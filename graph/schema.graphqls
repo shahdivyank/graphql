@@ -19,7 +19,7 @@ type Comment {
 }
 
 type Beat {
-  ID: UUID!
+  id: UUID!
   user: User!
   location: String!
   timestamp: Int!
@@ -35,10 +35,13 @@ type Query {
   beats: [Beat!]!
   users: [User!]!
   comments: [Comment!]!
+
+  user(id: UUID!): User!
+  beatdrop(id: UUID!): Beat!
 }
 
 input NewBeat {
-  user: String!
+  user: UUID!
   location: String!
   song: String!
   artist: String!
@@ -54,12 +57,12 @@ input NewUser {
 }
 
 input NewComment {
-  user: String!
+  user: UUID!
   comment: String!
 }
 
 type Mutation {
-  beatdrop(input: NewBeat!): Beat!
+  add_beat(input: NewBeat!): Beat!
   add_new_user(input: NewUser!): User!
   add_comment(input: NewComment!): Comment!
 }
