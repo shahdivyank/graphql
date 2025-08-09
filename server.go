@@ -55,52 +55,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	rows, err := pool.Query(context.Background(), `
-	SELECT 
-		b.id,
-		b.userid,
-		b.timestamp,
-		b.location,
-		b.song,
-		b.artist,
-		b.description,
-		b.longitude,
-		b.latitude,
-		u.id,
-		u.name,
-		u.username,
-		u.bio
-	FROM beats b
-	JOIN users u ON b.userid = u.id;`)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	var beats []Beat
-	for rows.Next() {
-		var beat Beat
-	if err := rows.Scan(
-		&beat.ID,
-		&beat.User.ID,
-		&beat.Timestamp,
-		&beat.Location,
-		&beat.Song,
-		&beat.Artist,
-		&beat.Description,
-		&beat.Longitude,
-		&beat.Latitude,
-		&beat.User.ID,
-		&beat.User.Name,
-		&beat.User.Username,
-		&beat.User.Bio,
-	); err != nil {
-		log.Fatalf("Error scanning row: %v", err)
-	}
-	beats = append(beats, beat)
-	}
-	fmt.Println("Beats:", beats)
-
 	defer pool.Close()
 
 	port := os.Getenv("PORT")
