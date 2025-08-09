@@ -28,6 +28,18 @@ type User struct {
 	Bio string `json:"bio"`
 }
 
+type Beat struct {
+	ID uuid.UUID `json:"id"`
+	User uuid.UUID `json:"userid"`
+	Location string `json:"location"`
+	Timestamp int32 `json:"timestamp"`
+	Song string `json:"song"`
+	Artist string `json:"artist"`
+	Description string `json:"description"`
+	Longitude string `json:"longitude"`
+	Latitude string `json:"latitude"`
+}
+
 func main() {
 
 	if err := godotenv.Load(); err != nil {
@@ -53,13 +65,29 @@ func main() {
 
 	var users []User
 	for rows.Next() {
-		var author User
-		if err := rows.Scan(&author.ID, &author.Name, &author.Username, &author.Bio); err != nil {
+		var user User
+		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Bio); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
-		users = append(users, author)
+		users = append(users, user)
 	}
 	fmt.Println("Users:", users)
+
+	rows, err = pool.Query(context.Background(), "SELECT * FROM beats")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	var beats []Beat
+	for rows.Next() {
+		var beat Beat
+		if err := rows.Scan(&beat.ID, &beat.User, &beat.Timestamp, &beat.Location, &beat.Song, &beat.Artist, &beat.Description, &beat.Longitude, &beat.Latitude); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+		beats = append(beats, beat)
+	}
+	fmt.Println("Beats:", beats)
 
 	defer pool.Close()
 
