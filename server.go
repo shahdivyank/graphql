@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"graphql/graph"
 	"log"
 	"net/http"
@@ -11,12 +13,30 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
 const defaultPort = "8080"
 
 func main() {
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	POSTGRES_URL := os.Getenv("POSTGRES_URL")
+
+	pool, err := pgxpool.New(context.Background(), POSTGRES_URL)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
+		os.Exit(1)
+	}
+
+	defer pool.Close()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
