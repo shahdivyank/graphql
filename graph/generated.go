@@ -50,7 +50,6 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Beat struct {
 		Artist      func(childComplexity int) int
-		Comments    func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Latitude    func(childComplexity int) int
@@ -128,13 +127,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Beat.Artist(childComplexity), true
-
-	case "Beat.comments":
-		if e.complexity.Beat.Comments == nil {
-			break
-		}
-
-		return e.complexity.Beat.Comments(childComplexity), true
 
 	case "Beat.description":
 		if e.complexity.Beat.Description == nil {
@@ -892,60 +884,6 @@ func (ec *executionContext) fieldContext_Beat_description(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Beat_comments(ctx context.Context, field graphql.CollectedField, obj *model.Beat) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beat_comments(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Comments, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Comment)
-	fc.Result = res
-	return ec.marshalNComment2ᚕᚖgraphqlᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Beat_comments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Beat",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Comment_id(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_Comment_timestamp(ctx, field)
-			case "user":
-				return ec.fieldContext_Comment_user(ctx, field)
-			case "comment":
-				return ec.fieldContext_Comment_comment(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Beat_longitude(ctx context.Context, field graphql.CollectedField, obj *model.Beat) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Beat_longitude(ctx, field)
 	if err != nil {
@@ -1273,8 +1211,6 @@ func (ec *executionContext) fieldContext_Mutation_add_beat(ctx context.Context, 
 				return ec.fieldContext_Beat_artist(ctx, field)
 			case "description":
 				return ec.fieldContext_Beat_description(ctx, field)
-			case "comments":
-				return ec.fieldContext_Beat_comments(ctx, field)
 			case "longitude":
 				return ec.fieldContext_Beat_longitude(ctx, field)
 			case "latitude":
@@ -1480,8 +1416,6 @@ func (ec *executionContext) fieldContext_Query_beats(_ context.Context, field gr
 				return ec.fieldContext_Beat_artist(ctx, field)
 			case "description":
 				return ec.fieldContext_Beat_description(ctx, field)
-			case "comments":
-				return ec.fieldContext_Beat_comments(ctx, field)
 			case "longitude":
 				return ec.fieldContext_Beat_longitude(ctx, field)
 			case "latitude":
@@ -1719,8 +1653,6 @@ func (ec *executionContext) fieldContext_Query_beatdrop(ctx context.Context, fie
 				return ec.fieldContext_Beat_artist(ctx, field)
 			case "description":
 				return ec.fieldContext_Beat_description(ctx, field)
-			case "comments":
-				return ec.fieldContext_Beat_comments(ctx, field)
 			case "longitude":
 				return ec.fieldContext_Beat_longitude(ctx, field)
 			case "latitude":
@@ -4196,11 +4128,6 @@ func (ec *executionContext) _Beat(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "description":
 			out.Values[i] = ec._Beat_description(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "comments":
-			out.Values[i] = ec._Beat_comments(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

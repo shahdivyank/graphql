@@ -7,16 +7,15 @@ import (
 )
 
 type Beat struct {
-	ID          uuid.UUID  `json:"id"`
-	User        *User      `json:"user"`
-	Location    string     `json:"location"`
-	Timestamp   int32      `json:"timestamp"`
-	Song        string     `json:"song"`
-	Artist      string     `json:"artist"`
-	Description string     `json:"description"`
-	Comments    []*Comment `json:"comments"`
-	Longitude   float64    `json:"longitude"`
-	Latitude    float64    `json:"latitude"`
+	ID          uuid.UUID `json:"id"`
+	User        *User     `json:"user"`
+	Location    string    `json:"location"`
+	Timestamp   int32     `json:"timestamp"`
+	Song        string    `json:"song"`
+	Artist      string    `json:"artist"`
+	Description string    `json:"description"`
+	Longitude   float64   `json:"longitude"`
+	Latitude    float64   `json:"latitude"`
 }
 
 type Comment struct {

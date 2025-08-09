@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 	"graphql/graph/model"
+	"log"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -80,21 +82,80 @@ func (r *mutationResolver) AddComment(ctx context.Context, input model.NewCommen
 
 // Beats is the resolver for the beats field.
 func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
-	beatdrops := make([]*model.Beat, 0, len(r.beatdrops))
+	rows, err := r.db.Query(context.Background(), `
+	SELECT 
+		b.id,
+		b.userid,
+		b.timestamp,
+		b.location,
+		b.song,
+		b.artist,
+		b.description,
+		b.longitude,
+		b.latitude,
+		u.id,
+		u.name,
+		u.username,
+		u.bio
+	FROM beats b
+	JOIN users u ON b.userid = u.id
+	`)
 
-	for _, beatdrop := range r.beatdrops {
-		beatdrops = append(beatdrops, beatdrop)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
 	}
 
-	return beatdrops, nil
+	defer rows.Close()
+
+	var beats []*model.Beat
+
+	for rows.Next() {
+		var beat model.Beat
+		beat.User = &model.User{}
+
+		if err := rows.Scan(&beat.ID,
+		&beat.User.ID,
+		&beat.Timestamp,
+		&beat.Location,
+		&beat.Song,
+		&beat.Artist,
+		&beat.Description,
+		&beat.Longitude,
+		&beat.Latitude,
+		&beat.User.ID,
+		&beat.User.Name,
+		&beat.User.Username,
+		&beat.User.Bio,); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+
+		beats = append(beats, &beat)
+	}
+	
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	return beats, nil
 }
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	users := make([]*model.User, 0, len(r.users))
+	rows, err := r.db.Query(context.Background(), "SELECT * FROM users")
 
-	for _, u := range r.users {
-		users = append(users, u)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	defer rows.Close()
+
+	var users []*model.User
+	for rows.Next() {
+		var user model.User
+		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Bio); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+		users = append(users, &user)
 	}
 
 	return users, nil
@@ -107,24 +168,57 @@ func (r *queryResolver) Comments(ctx context.Context) ([]*model.Comment, error) 
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id uuid.UUID) (*model.User, error) {
-	user, ok := r.users[id]
+	var user model.User
+	err := r.db.QueryRow(context.Background(), "SELECT id, name, username, bio FROM users WHERE id = $1", id).Scan(&user.ID, &user.Name, &user.Username, &user.Bio)
 
-	if !ok {
-		return nil, fmt.Errorf("user with ID %s not found", id)
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 // Beatdrop is the resolver for the beatdrop field.
 func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat, error) {
-	beatdrop, ok := r.beatdrops[id]
+	var beat model.Beat
+	beat.User = &model.User{}
 
-	if !ok {
-		return nil, fmt.Errorf("user with ID %s not found", id)
+	err := r.db.QueryRow(context.Background(), `
+	SELECT 
+		b.id,
+		b.userid,
+		b.timestamp,
+		b.location,
+		b.song,
+		b.artist,
+		b.description,
+		b.longitude,
+		b.latitude,
+		u.id,
+		u.name,
+		u.username,
+		u.bio
+	FROM beats b
+	JOIN users u ON b.userid = u.id
+	WHERE b.id = $1;`, id).Scan(&beat.ID,
+		&beat.User.ID,
+		&beat.Timestamp,
+		&beat.Location,
+		&beat.Song,
+		&beat.Artist,
+		&beat.Description,
+		&beat.Longitude,
+		&beat.Latitude,
+		&beat.User.ID,
+		&beat.User.Name,
+		&beat.User.Username,
+		&beat.User.Bio,)
+	
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
 	}
 
-	return beatdrop, nil
+	return &beat, nil
 }
 
 // Mutation returns MutationResolver implementation.
