@@ -13,12 +13,20 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
 const defaultPort = "8080"
+
+type User struct {
+	ID uuid.UUID `json:"id"`
+	Name string `json:"name"`
+	Username string `json:"username"`
+	Bio string `json:"bio"`
+}
 
 func main() {
 
@@ -34,6 +42,24 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
 		os.Exit(1)
 	}
+
+	rows, err := pool.Query(context.Background(), "SELECT * FROM users")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var author User
+		if err := rows.Scan(&author.ID, &author.Name, &author.Username, &author.Bio); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+		users = append(users, author)
+	}
+	fmt.Println("Users:", users)
 
 	defer pool.Close()
 

@@ -26,7 +26,6 @@ type Beat {
   song: String!
   artist: String!
   description: String!
-  comments: [Comment!]!
   longitude: Float!
   latitude: Float!
 }
