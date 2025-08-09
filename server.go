@@ -13,32 +13,12 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
 const defaultPort = "8080"
-
-type User struct {
-	ID uuid.UUID `json:"id"`
-	Name string `json:"name"`
-	Username string `json:"username"`
-	Bio string `json:"bio"`
-}
-
-type Beat struct {
-	ID uuid.UUID `json:"id"`
-	User User `json:"userid"`
-	Location string `json:"location"`
-	Timestamp int32 `json:"timestamp"`
-	Song string `json:"song"`
-	Artist string `json:"artist"`
-	Description string `json:"description"`
-	Longitude string `json:"longitude"`
-	Latitude string `json:"latitude"`
-}
 
 func main() {
 
