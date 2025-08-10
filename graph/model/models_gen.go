@@ -22,6 +22,7 @@ type Comment struct {
 	ID        uuid.UUID `json:"id"`
 	Timestamp int32     `json:"timestamp"`
 	User      *User     `json:"user"`
+	Beat      *Beat     `json:"beat"`
 	Comment   string    `json:"comment"`
 }
 
@@ -40,6 +41,7 @@ type NewBeat struct {
 
 type NewComment struct {
 	User    uuid.UUID `json:"user"`
+	Beat    uuid.UUID `json:"beat"`
 	Comment string    `json:"comment"`
 }
 

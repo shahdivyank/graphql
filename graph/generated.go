@@ -61,6 +61,7 @@ type ComplexityRoot struct {
 	}
 
 	Comment struct {
+		Beat      func(childComplexity int) int
 		Comment   func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Timestamp func(childComplexity int) int
@@ -76,7 +77,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Beatdrop func(childComplexity int, id uuid.UUID) int
 		Beats    func(childComplexity int) int
-		Comments func(childComplexity int) int
+		Comments func(childComplexity int, id uuid.UUID) int
 		User     func(childComplexity int, id uuid.UUID) int
 		Users    func(childComplexity int) int
 	}
@@ -97,9 +98,9 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Beats(ctx context.Context) ([]*model.Beat, error)
 	Users(ctx context.Context) ([]*model.User, error)
-	Comments(ctx context.Context) ([]*model.Comment, error)
 	User(ctx context.Context, id uuid.UUID) (*model.User, error)
 	Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat, error)
+	Comments(ctx context.Context, id uuid.UUID) ([]*model.Comment, error)
 }
 
 type executableSchema struct {
@@ -183,6 +184,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Beat.User(childComplexity), true
+
+	case "Comment.beat":
+		if e.complexity.Comment.Beat == nil {
+			break
+		}
+
+		return e.complexity.Comment.Beat(childComplexity), true
 
 	case "Comment.comment":
 		if e.complexity.Comment.Comment == nil {
@@ -272,7 +280,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.complexity.Query.Comments(childComplexity), true
+		args, err := ec.field_Query_comments_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Comments(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -493,6 +506,17 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 }
 
 func (ec *executionContext) field_Query_beatdrop_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_comments_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
@@ -1114,6 +1138,70 @@ func (ec *executionContext) fieldContext_Comment_user(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _Comment_beat(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Comment_beat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Beat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Beat)
+	fc.Result = res
+	return ec.marshalNBeat2ᚖgraphqlᚋgraphᚋmodelᚐBeat(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Comment_beat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Beat_id(ctx, field)
+			case "user":
+				return ec.fieldContext_Beat_user(ctx, field)
+			case "location":
+				return ec.fieldContext_Beat_location(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_Beat_timestamp(ctx, field)
+			case "song":
+				return ec.fieldContext_Beat_song(ctx, field)
+			case "artist":
+				return ec.fieldContext_Beat_artist(ctx, field)
+			case "description":
+				return ec.fieldContext_Beat_description(ctx, field)
+			case "longitude":
+				return ec.fieldContext_Beat_longitude(ctx, field)
+			case "latitude":
+				return ec.fieldContext_Beat_latitude(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Comment_comment(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_comment(ctx, field)
 	if err != nil {
@@ -1343,6 +1431,8 @@ func (ec *executionContext) fieldContext_Mutation_add_comment(ctx context.Contex
 				return ec.fieldContext_Comment_timestamp(ctx, field)
 			case "user":
 				return ec.fieldContext_Comment_user(ctx, field)
+			case "beat":
+				return ec.fieldContext_Comment_beat(ctx, field)
 			case "comment":
 				return ec.fieldContext_Comment_comment(ctx, field)
 			}
@@ -1476,60 +1566,6 @@ func (ec *executionContext) fieldContext_Query_users(_ context.Context, field gr
 				return ec.fieldContext_User_bio(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_comments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_comments(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Comments(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Comment)
-	fc.Result = res
-	return ec.marshalNComment2ᚕᚖgraphqlᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_comments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Comment_id(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_Comment_timestamp(ctx, field)
-			case "user":
-				return ec.fieldContext_Comment_user(ctx, field)
-			case "comment":
-				return ec.fieldContext_Comment_comment(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
 		},
 	}
 	return fc, nil
@@ -1669,6 +1705,73 @@ func (ec *executionContext) fieldContext_Query_beatdrop(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_beatdrop_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_comments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_comments(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Comments(rctx, fc.Args["id"].(uuid.UUID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Comment)
+	fc.Result = res
+	return ec.marshalNComment2ᚕᚖgraphqlᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_comments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Comment_id(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_Comment_timestamp(ctx, field)
+			case "user":
+				return ec.fieldContext_Comment_user(ctx, field)
+			case "beat":
+				return ec.fieldContext_Comment_beat(ctx, field)
+			case "comment":
+				return ec.fieldContext_Comment_comment(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Comment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_comments_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4009,7 +4112,7 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj an
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"user", "comment"}
+	fieldsInOrder := [...]string{"user", "beat", "comment"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4023,6 +4126,13 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj an
 				return it, err
 			}
 			it.User = data
+		case "beat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beat"))
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Beat = data
 		case "comment":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -4190,6 +4300,11 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "beat":
+			out.Values[i] = ec._Comment_beat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "comment":
 			out.Values[i] = ec._Comment_comment(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4344,28 +4459,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "comments":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_comments(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "user":
 			field := field
 
@@ -4398,6 +4491,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_beatdrop(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "comments":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_comments(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

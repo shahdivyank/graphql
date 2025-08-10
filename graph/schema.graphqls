@@ -15,6 +15,7 @@ type Comment {
   id: UUID!
   timestamp: Int!
   user: User!
+  beat: Beat!
   comment: String!
 }
 
@@ -33,10 +34,10 @@ type Beat {
 type Query {
   beats: [Beat!]!
   users: [User!]!
-  comments: [Comment!]!
 
   user(id: UUID!): User!
   beatdrop(id: UUID!): Beat!
+  comments(id: UUID!): [Comment!]!
 }
 
 input NewBeat {
@@ -57,6 +58,7 @@ input NewUser {
 
 input NewComment {
   user: UUID!
+  beat: UUID!
   comment: String!
 }
 

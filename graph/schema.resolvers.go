@@ -19,15 +19,16 @@ import (
 func (r *mutationResolver) AddBeat(ctx context.Context, input model.NewBeat) (*model.Beat, error) {
 	id := uuid.New()
 
-	user, ok := r.users[input.User]
+	var user model.User
+	err := r.db.QueryRow(context.Background(), "SELECT id, name, username, bio FROM users WHERE id = $1", input.User).Scan(&user.ID, &user.Name, &user.Username, &user.Bio)
 
-	if !ok {
-		return nil, fmt.Errorf("user with ID %s not found", input.User)
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
 	}
 
 	beatdrop := &model.Beat{
 		ID:          id,
-		User:        user,
+		User:        &user,
 		Song:        input.Song,
 		Artist:      input.Artist,
 		Description: input.Description,
@@ -37,7 +38,12 @@ func (r *mutationResolver) AddBeat(ctx context.Context, input model.NewBeat) (*m
 		Timestamp:   int32(time.Now().Unix()),
 	}
 
-	r.beatdrops[id] = beatdrop
+	_, err = r.db.Exec(context.Background(), `INSERT INTO beats (id, userid, song, artist, description, location, longitude, latitude, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		beatdrop.ID, beatdrop.User.ID, beatdrop.Song, beatdrop.Artist, beatdrop.Description, beatdrop.Location, beatdrop.Longitude, beatdrop.Latitude, beatdrop.Timestamp)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
 
 	return beatdrop, nil
 }
@@ -65,10 +71,18 @@ func (r *mutationResolver) AddNewUser(ctx context.Context, input model.NewUser) 
 
 // AddComment is the resolver for the add_comment field.
 func (r *mutationResolver) AddComment(ctx context.Context, input model.NewComment) (*model.Comment, error) {
-	user, ok := r.users[input.User]
+	var user model.User
+	err := r.db.QueryRow(context.Background(), "SELECT id, name, username, bio FROM users WHERE id = $1;", input.User).Scan(&user.ID, &user.Name, &user.Username, &user.Bio)
 
-	if !ok {
-		return nil, fmt.Errorf("user with ID %s not found", input.User)
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	var beat model.Beat
+	err = r.db.QueryRow(context.Background(), "SELECT id, location, timestamp, song, artist, description, longitude, latitude FROM beats WHERE id = $1;", input.Beat).Scan(&beat.ID, &beat.Location, &beat.Timestamp, &beat.Song, &beat.Artist, &beat.Description, &beat.Longitude, &beat.Latitude)
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
 	}
 
 	id := uuid.New()
@@ -76,11 +90,17 @@ func (r *mutationResolver) AddComment(ctx context.Context, input model.NewCommen
 	comment := &model.Comment{
 		ID:        id,
 		Timestamp: int32(time.Now().Unix()),
-		User:      user,
+		User:      &user,
+		Beat:      &beat,
 		Comment:   input.Comment,
 	}
 
-	r.comments = append(r.comments, comment)
+	_, err = r.db.Exec(context.Background(), `INSERT INTO comments (id, userid, beatid, timestamp, comment) VALUES ($1, $2, $3, $4, $5)`,
+		id, user.ID, beat.ID, comment.Timestamp, comment.Comment)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
 
 	return comment, nil
 }
@@ -119,24 +139,24 @@ func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
 		beat.User = &model.User{}
 
 		if err := rows.Scan(&beat.ID,
-		&beat.User.ID,
-		&beat.Timestamp,
-		&beat.Location,
-		&beat.Song,
-		&beat.Artist,
-		&beat.Description,
-		&beat.Longitude,
-		&beat.Latitude,
-		&beat.User.ID,
-		&beat.User.Name,
-		&beat.User.Username,
-		&beat.User.Bio,); err != nil {
+			&beat.User.ID,
+			&beat.Timestamp,
+			&beat.Location,
+			&beat.Song,
+			&beat.Artist,
+			&beat.Description,
+			&beat.Longitude,
+			&beat.Latitude,
+			&beat.User.ID,
+			&beat.User.Name,
+			&beat.User.Username,
+			&beat.User.Bio); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
 		beats = append(beats, &beat)
 	}
-	
+
 	if err != nil {
 		log.Fatalf("Error querying user: %v", err)
 	}
@@ -164,11 +184,6 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	}
 
 	return users, nil
-}
-
-// Comments is the resolver for the comments field.
-func (r *queryResolver) Comments(ctx context.Context) ([]*model.Comment, error) {
-	return r.comments, nil
 }
 
 // User is the resolver for the user field.
@@ -217,13 +232,56 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		&beat.User.ID,
 		&beat.User.Name,
 		&beat.User.Username,
-		&beat.User.Bio,)
-	
+		&beat.User.Bio)
+
 	if err != nil {
 		log.Fatalf("Error querying user: %v", err)
 	}
 
 	return &beat, nil
+}
+
+// Comments is the resolver for the comments field.
+func (r *queryResolver) Comments(ctx context.Context, id uuid.UUID) ([]*model.Comment, error) {
+	rows, err := r.db.Query(context.Background(), `
+	 SELECT
+        c.id,
+        c.timestamp,
+        u.id,
+        u.name,
+        u.username,
+        u.bio,
+        c.comment
+    FROM comments c
+    JOIN users u ON c.userid = u.id
+    WHERE c.beatid = $1
+	`, id)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	defer rows.Close()
+
+	var comments []*model.Comment
+
+	for rows.Next() {
+		var comment model.Comment
+		comment.User = &model.User{}
+
+		if err := rows.Scan(
+			&comment.ID, &comment.Timestamp, &comment.User.ID, &comment.User.Name, &comment.User.Username, &comment.User.Bio,  &comment.Comment); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+
+		comments = append(comments, &comment)
+	}
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	return comments, nil
 }
 
 // Mutation returns MutationResolver implementation.
