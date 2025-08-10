@@ -288,6 +288,54 @@ func (r *queryResolver) Comments(ctx context.Context, id uuid.UUID) ([]*model.Co
 	return comments, nil
 }
 
+// Beatdrops is the resolver for the beatdrops field.
+func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.Beat, error) {
+	rows, err := r.db.Query(context.Background(), `
+	SELECT 
+		id,
+		timestamp,
+		location,
+		song,
+		artist,
+		description,
+		longitude,
+		latitude
+	FROM beats WHERE userid = $1;`, id)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	defer rows.Close()
+
+	var beats []*model.Beat
+
+	for rows.Next() {
+		var beat model.Beat
+		beat.User = &model.User{}
+
+		if err := rows.Scan(&beat.ID,
+			&beat.Timestamp,
+			&beat.Location,
+			&beat.Song,
+			&beat.Artist,
+			&beat.Description,
+			&beat.Longitude,
+			&beat.Latitude,
+			); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+
+		beats = append(beats, &beat)
+	}
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	return beats, nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 

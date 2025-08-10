@@ -42,6 +42,7 @@ type Query {
   user(id: UUID!): User!
   beatdrop(id: UUID!): Beat!
   comments(id: UUID!): [Comment!]!
+  beatdrops(id: UUID!): [Beat!]!
 }
 
 input NewBeat {
