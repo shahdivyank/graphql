@@ -270,7 +270,7 @@ func (r *queryResolver) Comments(ctx context.Context, id uuid.UUID) ([]*model.Co
 		comment.User = &model.User{}
 
 		if err := rows.Scan(
-			&comment.ID, &comment.Timestamp, &comment.User.ID, &comment.User.Name, &comment.User.Username, &comment.User.Bio,  &comment.Comment); err != nil {
+			&comment.ID, &comment.Timestamp, &comment.User.ID, &comment.User.Name, &comment.User.Username, &comment.User.Bio, &comment.Comment); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
