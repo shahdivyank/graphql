@@ -83,10 +83,14 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Bio      func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Name     func(childComplexity int) int
-		Username func(childComplexity int) int
+		Beatdrops func(childComplexity int) int
+		Bio       func(childComplexity int) int
+		Friends   func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Photo     func(childComplexity int) int
+		Settings  func(childComplexity int) int
+		Username  func(childComplexity int) int
 	}
 }
 
@@ -306,12 +310,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Users(childComplexity), true
 
+	case "User.beatdrops":
+		if e.complexity.User.Beatdrops == nil {
+			break
+		}
+
+		return e.complexity.User.Beatdrops(childComplexity), true
+
 	case "User.bio":
 		if e.complexity.User.Bio == nil {
 			break
 		}
 
 		return e.complexity.User.Bio(childComplexity), true
+
+	case "User.friends":
+		if e.complexity.User.Friends == nil {
+			break
+		}
+
+		return e.complexity.User.Friends(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -326,6 +344,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.Name(childComplexity), true
+
+	case "User.photo":
+		if e.complexity.User.Photo == nil {
+			break
+		}
+
+		return e.complexity.User.Photo(childComplexity), true
+
+	case "User.settings":
+		if e.complexity.User.Settings == nil {
+			break
+		}
+
+		return e.complexity.User.Settings(childComplexity), true
 
 	case "User.username":
 		if e.complexity.User.Username == nil {
@@ -681,6 +713,14 @@ func (ec *executionContext) fieldContext_Beat_user(_ context.Context, field grap
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
+			case "beatdrops":
+				return ec.fieldContext_User_beatdrops(ctx, field)
+			case "friends":
+				return ec.fieldContext_User_friends(ctx, field)
+			case "settings":
+				return ec.fieldContext_User_settings(ctx, field)
+			case "photo":
+				return ec.fieldContext_User_photo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1131,6 +1171,14 @@ func (ec *executionContext) fieldContext_Comment_user(_ context.Context, field g
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
+			case "beatdrops":
+				return ec.fieldContext_User_beatdrops(ctx, field)
+			case "friends":
+				return ec.fieldContext_User_friends(ctx, field)
+			case "settings":
+				return ec.fieldContext_User_settings(ctx, field)
+			case "photo":
+				return ec.fieldContext_User_photo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1368,6 +1416,14 @@ func (ec *executionContext) fieldContext_Mutation_add_new_user(ctx context.Conte
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
+			case "beatdrops":
+				return ec.fieldContext_User_beatdrops(ctx, field)
+			case "friends":
+				return ec.fieldContext_User_friends(ctx, field)
+			case "settings":
+				return ec.fieldContext_User_settings(ctx, field)
+			case "photo":
+				return ec.fieldContext_User_photo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1564,6 +1620,14 @@ func (ec *executionContext) fieldContext_Query_users(_ context.Context, field gr
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
+			case "beatdrops":
+				return ec.fieldContext_User_beatdrops(ctx, field)
+			case "friends":
+				return ec.fieldContext_User_friends(ctx, field)
+			case "settings":
+				return ec.fieldContext_User_settings(ctx, field)
+			case "photo":
+				return ec.fieldContext_User_photo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -1618,6 +1682,14 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
 				return ec.fieldContext_User_bio(ctx, field)
+			case "beatdrops":
+				return ec.fieldContext_User_beatdrops(ctx, field)
+			case "friends":
+				return ec.fieldContext_User_friends(ctx, field)
+			case "settings":
+				return ec.fieldContext_User_settings(ctx, field)
+			case "photo":
+				return ec.fieldContext_User_photo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -2073,6 +2145,182 @@ func (ec *executionContext) _User_bio(ctx context.Context, field graphql.Collect
 }
 
 func (ec *executionContext) fieldContext_User_bio(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_beatdrops(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_beatdrops(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Beatdrops, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_beatdrops(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_friends(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_friends(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Friends, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_friends(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_settings(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_settings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Settings, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_settings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_photo(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_photo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Photo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_photo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -4584,6 +4832,26 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "bio":
 			out.Values[i] = ec._User_bio(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "beatdrops":
+			out.Values[i] = ec._User_beatdrops(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "friends":
+			out.Values[i] = ec._User_friends(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "settings":
+			out.Values[i] = ec._User_settings(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "photo":
+			out.Values[i] = ec._User_photo(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -9,6 +9,10 @@ type User {
   name: String!
   username: String!
   bio: String!
+  beatdrops: Int!
+  friends: Int!
+  settings: String!
+  photo: String!
 }
 
 type Comment {

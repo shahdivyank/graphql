@@ -55,8 +55,12 @@ type Query struct {
 }
 
 type User struct {
-	ID       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	Username string    `json:"username"`
-	Bio      string    `json:"bio"`
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Username  string    `json:"username"`
+	Bio       string    `json:"bio"`
+	Beatdrops int32     `json:"beatdrops"`
+	Friends   int32     `json:"friends"`
+	Settings  string    `json:"settings"`
+	Photo     string    `json:"photo"`
 }

@@ -53,14 +53,18 @@ func (r *mutationResolver) AddNewUser(ctx context.Context, input model.NewUser) 
 	id := uuid.New()
 
 	user := &model.User{
-		ID:       id,
-		Name:     input.Name,
-		Username: input.Username,
-		Bio:      input.Bio,
+		ID:        id,
+		Name:      input.Name,
+		Username:  input.Username,
+		Bio:       input.Bio,
+		Beatdrops: 0,
+		Friends:   0,
+		Settings:  `{}`,
+		Photo:     "",
 	}
 
-	_, err := r.db.Exec(context.Background(), `INSERT INTO users (id, name, username, bio) VALUES ($1, $2, $3, $4)`,
-		user.ID, user.Name, user.Username, user.Bio)
+	_, err := r.db.Exec(context.Background(), `INSERT INTO users (id, name, username, bio, beatdrops, friends, settings, photo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		user.ID, user.Name, user.Username, user.Bio, user.Beatdrops, user.Friends, user.Settings, user.Photo)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -166,7 +170,7 @@ func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	rows, err := r.db.Query(context.Background(), "SELECT * FROM users")
+	rows, err := r.db.Query(context.Background(), "SELECT id, name, username, bio, beatdrops, friends, settings, photo FROM users")
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -177,7 +181,7 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	var users []*model.User
 	for rows.Next() {
 		var user model.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Bio); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Bio, &user.Beatdrops, &user.Friends, &user.Settings, &user.Photo); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 		users = append(users, &user)
