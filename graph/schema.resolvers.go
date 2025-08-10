@@ -100,7 +100,7 @@ func (r *mutationResolver) AddComment(ctx context.Context, input model.NewCommen
 	}
 
 	_, err = r.db.Exec(context.Background(), `INSERT INTO comments (id, userid, beatid, timestamp, comment) VALUES ($1, $2, $3, $4, $5)`,
-		id, user.ID, beat.ID, comment.Timestamp, comment.Comment)
+		id, input.User, input.Beat, comment.Timestamp, comment.Comment)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -258,8 +258,7 @@ func (r *queryResolver) Comments(ctx context.Context, id uuid.UUID) ([]*model.Co
         c.comment
     FROM comments c
     JOIN users u ON c.userid = u.id
-    WHERE c.beatid = $1
-	`, id)
+    WHERE c.beatid = $1;`, id)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
