@@ -53,7 +53,12 @@ func (r *mutationResolver) AddNewUser(ctx context.Context, input model.NewUser) 
 		Bio:      input.Bio,
 	}
 
-	r.users[id] = user
+	_, err := r.db.Exec(context.Background(), `INSERT INTO users (id, name, username, bio) VALUES ($1, $2, $3, $4)`,
+		user.ID, user.Name, user.Username, user.Bio)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
 
 	return user, nil
 }
