@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type AcceptFriend struct {
+	ID uuid.UUID `json:"id"`
+}
+
 type Beat struct {
 	ID          uuid.UUID `json:"id"`
 	User        *User     `json:"user"`
@@ -26,6 +30,18 @@ type Comment struct {
 	Comment   string    `json:"comment"`
 }
 
+type DenyFriend struct {
+	ID uuid.UUID `json:"id"`
+}
+
+type Friend struct {
+	ID        uuid.UUID `json:"id"`
+	Alpha     *User     `json:"alpha"`
+	Beta      *User     `json:"beta"`
+	Timestamp int32     `json:"timestamp"`
+	Status    int32     `json:"status"`
+}
+
 type Mutation struct {
 }
 
@@ -43,6 +59,11 @@ type NewComment struct {
 	User    uuid.UUID `json:"user"`
 	Beat    uuid.UUID `json:"beat"`
 	Comment string    `json:"comment"`
+}
+
+type NewFriend struct {
+	User   uuid.UUID `json:"user"`
+	Friend uuid.UUID `json:"friend"`
 }
 
 type NewUser struct {

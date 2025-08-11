@@ -30,3 +30,13 @@ CREATE TABLE IF NOT EXISTS comments (
     timestamp INT NOT NULL,
     comment VARCHAR(255) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS friends (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    alpha UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    beta UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    timestamp INT NOT NULL,
+    status INT NOT NULL,
+    CONSTRAINT user_pair_unique UNIQUE (alpha, beta),
+    CONSTRAINT user_pair_check CHECK (alpha > beta)
+);

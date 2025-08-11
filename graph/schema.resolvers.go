@@ -111,8 +111,8 @@ func (r *mutationResolver) AddComment(ctx context.Context, input model.NewCommen
 
 // UpdateBio is the resolver for the update_bio field.
 func (r *mutationResolver) UpdateBio(ctx context.Context, input model.UpdateBio) (string, error) {
-	_, err := r.db.Exec(context.Background(), `UPDATE users SET bio = $1 WHERE id = $2;`, input.Bio, input.User);
-	
+	_, err := r.db.Exec(context.Background(), `UPDATE users SET bio = $1 WHERE id = $2;`, input.Bio, input.User)
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
 	}
@@ -122,13 +122,72 @@ func (r *mutationResolver) UpdateBio(ctx context.Context, input model.UpdateBio)
 
 // UpdateUsername is the resolver for the update_username field.
 func (r *mutationResolver) UpdateUsername(ctx context.Context, input model.UpdateUsername) (string, error) {
-	_, err := r.db.Exec(context.Background(), `UPDATE users SET username = $1 WHERE id = $2;`, input.Username, input.User);
-	
+	_, err := r.db.Exec(context.Background(), `UPDATE users SET username = $1 WHERE id = $2;`, input.Username, input.User)
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
 	}
 
 	return "ok", nil
+}
+
+// AddFriend is the resolver for the add_friend field.
+func (r *mutationResolver) AddFriend(ctx context.Context, input *model.NewFriend) (string, error) {
+	id := uuid.New()
+
+	var user model.User
+	err := r.db.QueryRow(context.Background(), "SELECT id, name, username, bio FROM users WHERE id = $1;", input.User).Scan(&user.ID, &user.Name, &user.Username, &user.Bio)
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	var friend model.User
+	err = r.db.QueryRow(context.Background(), "SELECT id, name, username, bio FROM users WHERE id = $1;", input.Friend).Scan(&friend.ID, &friend.Name, &friend.Username, &friend.Bio)
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	friendship := &model.Friend{
+		ID:        id,
+		Alpha:     &user,
+		Beta:      &friend,
+		Timestamp: int32(time.Now().Unix()),
+		Status:    0,
+	}
+
+	_, err = r.db.Exec(context.Background(), `INSERT INTO friends (id, alpha, beta, timestamp, status) VALUES ($1, $2, $3, $4, $5)`,
+		friendship.ID, friendship.Alpha.ID, friendship.Beta.ID, friendship.Timestamp, friendship.Status)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	return "ok", nil
+}
+
+// AcceptFriend is the resolver for the accept_friend field.
+func (r *mutationResolver) AcceptFriend(ctx context.Context, input *model.AcceptFriend) (string, error) {
+	_, err := r.db.Exec(context.Background(), `UPDATE friends SET status = 1 WHERE id = $1;`, input.ID)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	return "ok", nil
+}
+
+// DenyFriend is the resolver for the deny_friend field.
+func (r *mutationResolver) DenyFriend(ctx context.Context, input *model.DenyFriend) (string, error) {
+	_, err := r.db.Exec(context.Background(), `UPDATE friends SET status = -1 WHERE id = $1;`, input.ID)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	return "ok", nil
+
 }
 
 // Beats is the resolver for the beats field.
@@ -188,28 +247,6 @@ func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
 	}
 
 	return beats, nil
-}
-
-// Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	rows, err := r.db.Query(context.Background(), "SELECT id, name, username, bio, beatdrops, friends, settings, photo FROM users")
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
-	}
-
-	defer rows.Close()
-
-	var users []*model.User
-	for rows.Next() {
-		var user model.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Bio, &user.Beatdrops, &user.Friends, &user.Settings, &user.Photo); err != nil {
-			log.Fatalf("Error scanning row: %v", err)
-		}
-		users = append(users, &user)
-	}
-
-	return users, nil
 }
 
 // User is the resolver for the user field.
@@ -355,6 +392,46 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 	}
 
 	return beats, nil
+}
+
+// Friends is the resolver for the friends field.
+func (r *queryResolver) Friends(ctx context.Context, id uuid.UUID) ([]*model.Friend, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT u.id, u.name, u.username, u.bio, u.photo, f.status
+		FROM friends f
+		JOIN users u 
+		  ON u.id = CASE WHEN f.alpha = $1 THEN f.beta ELSE f.alpha END
+		WHERE f.alpha = $1 OR f.beta = $1;`, id)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	defer rows.Close()
+
+	var friends []*model.Friend
+	for rows.Next() {
+		var friend model.Friend
+		friend.Beta = &model.User{}
+
+		if err := rows.Scan(
+			&friend.Beta.Name,
+			&friend.Beta.Name,
+			&friend.Beta.Username,
+			&friend.Beta.Bio,
+			&friend.Beta.Photo,
+			&friend.Status,
+		); err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		friends = append(friends, &friend)
+	}
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	return friends, nil
 }
 
 // Mutation returns MutationResolver implementation.
