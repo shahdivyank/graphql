@@ -54,6 +54,16 @@ type NewUser struct {
 type Query struct {
 }
 
+type UpdateBio struct {
+	User uuid.UUID `json:"user"`
+	Bio  string    `json:"bio"`
+}
+
+type UpdateUsername struct {
+	User     uuid.UUID `json:"user"`
+	Username string    `json:"username"`
+}
+
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`

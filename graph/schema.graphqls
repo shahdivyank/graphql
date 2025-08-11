@@ -67,8 +67,21 @@ input NewComment {
   comment: String!
 }
 
+input UpdateBio {
+  user: UUID!
+  bio: String!
+}
+
+input UpdateUsername {
+  user: UUID!
+  username: String!
+}
+
 type Mutation {
   add_beat(input: NewBeat!): Beat!
   add_new_user(input: NewUser!): User!
   add_comment(input: NewComment!): Comment!
+
+  update_bio(input: UpdateBio!): String!
+  update_username(input: UpdateUsername!): String!
 }

@@ -109,6 +109,28 @@ func (r *mutationResolver) AddComment(ctx context.Context, input model.NewCommen
 	return comment, nil
 }
 
+// UpdateBio is the resolver for the update_bio field.
+func (r *mutationResolver) UpdateBio(ctx context.Context, input model.UpdateBio) (string, error) {
+	_, err := r.db.Exec(context.Background(), `UPDATE users SET bio = $1 WHERE id = $2;`, input.Bio, input.User);
+	
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	return "ok", nil
+}
+
+// UpdateUsername is the resolver for the update_username field.
+func (r *mutationResolver) UpdateUsername(ctx context.Context, input model.UpdateUsername) (string, error) {
+	_, err := r.db.Exec(context.Background(), `UPDATE users SET username = $1 WHERE id = $2;`, input.Username, input.User);
+	
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	return "ok", nil
+}
+
 // Beats is the resolver for the beats field.
 func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
 	rows, err := r.db.Query(context.Background(), `
@@ -321,7 +343,7 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 			&beat.Description,
 			&beat.Longitude,
 			&beat.Latitude,
-			); err != nil {
+		); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
