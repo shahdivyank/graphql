@@ -72,17 +72,18 @@ type ComplexityRoot struct {
 		Alpha     func(childComplexity int) int
 		Beta      func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Sender    func(childComplexity int) int
 		Status    func(childComplexity int) int
 		Timestamp func(childComplexity int) int
 	}
 
 	Mutation struct {
-		AcceptFriend   func(childComplexity int, input *model.AcceptFriend) int
+		AcceptFriend   func(childComplexity int, input model.AcceptFriend) int
 		AddBeat        func(childComplexity int, input model.NewBeat) int
 		AddComment     func(childComplexity int, input model.NewComment) int
-		AddFriend      func(childComplexity int, input *model.NewFriend) int
+		AddFriend      func(childComplexity int, input model.NewFriend) int
 		AddNewUser     func(childComplexity int, input model.NewUser) int
-		DenyFriend     func(childComplexity int, input *model.DenyFriend) int
+		DenyFriend     func(childComplexity int, input model.DenyFriend) int
 		UpdateBio      func(childComplexity int, input model.UpdateBio) int
 		UpdateUsername func(childComplexity int, input model.UpdateUsername) int
 	}
@@ -92,8 +93,9 @@ type ComplexityRoot struct {
 		Beatdrops func(childComplexity int, id uuid.UUID) int
 		Beats     func(childComplexity int) int
 		Comments  func(childComplexity int, id uuid.UUID) int
-		Friends   func(childComplexity int, id uuid.UUID) int
+		Friends   func(childComplexity int, id uuid.UUID, status int32) int
 		User      func(childComplexity int, id uuid.UUID) int
+		Users     func(childComplexity int, name string) int
 	}
 
 	User struct {
@@ -114,17 +116,18 @@ type MutationResolver interface {
 	AddComment(ctx context.Context, input model.NewComment) (*model.Comment, error)
 	UpdateBio(ctx context.Context, input model.UpdateBio) (string, error)
 	UpdateUsername(ctx context.Context, input model.UpdateUsername) (string, error)
-	AddFriend(ctx context.Context, input *model.NewFriend) (string, error)
-	AcceptFriend(ctx context.Context, input *model.AcceptFriend) (string, error)
-	DenyFriend(ctx context.Context, input *model.DenyFriend) (string, error)
+	AddFriend(ctx context.Context, input model.NewFriend) (string, error)
+	AcceptFriend(ctx context.Context, input model.AcceptFriend) (string, error)
+	DenyFriend(ctx context.Context, input model.DenyFriend) (string, error)
 }
 type QueryResolver interface {
 	Beats(ctx context.Context) ([]*model.Beat, error)
+	Users(ctx context.Context, name string) ([]*model.User, error)
 	User(ctx context.Context, id uuid.UUID) (*model.User, error)
 	Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat, error)
 	Comments(ctx context.Context, id uuid.UUID) ([]*model.Comment, error)
 	Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.Beat, error)
-	Friends(ctx context.Context, id uuid.UUID) ([]*model.Friend, error)
+	Friends(ctx context.Context, id uuid.UUID, status int32) ([]*model.Friend, error)
 }
 
 type executableSchema struct {
@@ -265,6 +268,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Friend.ID(childComplexity), true
 
+	case "Friend.sender":
+		if e.complexity.Friend.Sender == nil {
+			break
+		}
+
+		return e.complexity.Friend.Sender(childComplexity), true
+
 	case "Friend.status":
 		if e.complexity.Friend.Status == nil {
 			break
@@ -289,7 +299,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AcceptFriend(childComplexity, args["input"].(*model.AcceptFriend)), true
+		return e.complexity.Mutation.AcceptFriend(childComplexity, args["input"].(model.AcceptFriend)), true
 
 	case "Mutation.add_beat":
 		if e.complexity.Mutation.AddBeat == nil {
@@ -325,7 +335,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddFriend(childComplexity, args["input"].(*model.NewFriend)), true
+		return e.complexity.Mutation.AddFriend(childComplexity, args["input"].(model.NewFriend)), true
 
 	case "Mutation.add_new_user":
 		if e.complexity.Mutation.AddNewUser == nil {
@@ -349,7 +359,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DenyFriend(childComplexity, args["input"].(*model.DenyFriend)), true
+		return e.complexity.Mutation.DenyFriend(childComplexity, args["input"].(model.DenyFriend)), true
 
 	case "Mutation.update_bio":
 		if e.complexity.Mutation.UpdateBio == nil {
@@ -428,7 +438,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Friends(childComplexity, args["id"].(uuid.UUID)), true
+		return e.complexity.Query.Friends(childComplexity, args["id"].(uuid.UUID), args["status"].(int32)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -441,6 +451,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.User(childComplexity, args["id"].(uuid.UUID)), true
+
+	case "Query.users":
+		if e.complexity.Query.Users == nil {
+			break
+		}
+
+		args, err := ec.field_Query_users_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Users(childComplexity, args["name"].(string)), true
 
 	case "User.beatdrops":
 		if e.complexity.User.Beatdrops == nil {
@@ -633,7 +655,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_accept_friend_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalOAcceptFriend2ᚖgraphqlᚋgraphᚋmodelᚐAcceptFriend)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNAcceptFriend2graphqlᚋgraphᚋmodelᚐAcceptFriend)
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +688,7 @@ func (ec *executionContext) field_Mutation_add_comment_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_add_friend_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalONewFriend2ᚖgraphqlᚋgraphᚋmodelᚐNewFriend)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNNewFriend2graphqlᚋgraphᚋmodelᚐNewFriend)
 	if err != nil {
 		return nil, err
 	}
@@ -688,7 +710,7 @@ func (ec *executionContext) field_Mutation_add_new_user_args(ctx context.Context
 func (ec *executionContext) field_Mutation_deny_friend_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalODenyFriend2ᚖgraphqlᚋgraphᚋmodelᚐDenyFriend)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNDenyFriend2graphqlᚋgraphᚋmodelᚐDenyFriend)
 	if err != nil {
 		return nil, err
 	}
@@ -770,6 +792,11 @@ func (ec *executionContext) field_Query_friends_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "status", ec.unmarshalNInt2int32)
+	if err != nil {
+		return nil, err
+	}
+	args["status"] = arg1
 	return args, nil
 }
 
@@ -781,6 +808,17 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -1764,6 +1802,50 @@ func (ec *executionContext) fieldContext_Friend_status(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Friend_sender(ctx context.Context, field graphql.CollectedField, obj *model.Friend) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Friend_sender(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sender, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Friend_sender(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Friend",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type UUID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_add_beat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_add_beat(ctx, field)
 	if err != nil {
@@ -2103,7 +2185,7 @@ func (ec *executionContext) _Mutation_add_friend(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddFriend(rctx, fc.Args["input"].(*model.NewFriend))
+		return ec.resolvers.Mutation().AddFriend(rctx, fc.Args["input"].(model.NewFriend))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2158,7 +2240,7 @@ func (ec *executionContext) _Mutation_accept_friend(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AcceptFriend(rctx, fc.Args["input"].(*model.AcceptFriend))
+		return ec.resolvers.Mutation().AcceptFriend(rctx, fc.Args["input"].(model.AcceptFriend))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2213,7 +2295,7 @@ func (ec *executionContext) _Mutation_deny_friend(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DenyFriend(rctx, fc.Args["input"].(*model.DenyFriend))
+		return ec.resolvers.Mutation().DenyFriend(rctx, fc.Args["input"].(model.DenyFriend))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2314,6 +2396,79 @@ func (ec *executionContext) fieldContext_Query_beats(_ context.Context, field gr
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_users(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Users(rctx, fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚕᚖgraphqlᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "bio":
+				return ec.fieldContext_User_bio(ctx, field)
+			case "beatdrops":
+				return ec.fieldContext_User_beatdrops(ctx, field)
+			case "friends":
+				return ec.fieldContext_User_friends(ctx, field)
+			case "settings":
+				return ec.fieldContext_User_settings(ctx, field)
+			case "photo":
+				return ec.fieldContext_User_photo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_users_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2622,7 +2777,7 @@ func (ec *executionContext) _Query_friends(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Friends(rctx, fc.Args["id"].(uuid.UUID))
+		return ec.resolvers.Query().Friends(rctx, fc.Args["id"].(uuid.UUID), fc.Args["status"].(int32))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2657,6 +2812,8 @@ func (ec *executionContext) fieldContext_Query_friends(ctx context.Context, fiel
 				return ec.fieldContext_Friend_timestamp(ctx, field)
 			case "status":
 				return ec.fieldContext_Friend_status(ctx, field)
+			case "sender":
+				return ec.fieldContext_Friend_sender(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Friend", field.Name)
 		},
@@ -5598,6 +5755,11 @@ func (ec *executionContext) _Friend(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "sender":
+			out.Values[i] = ec._Friend_sender(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5748,6 +5910,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_beats(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "users":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_users(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6310,6 +6494,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNAcceptFriend2graphqlᚋgraphᚋmodelᚐAcceptFriend(ctx context.Context, v any) (model.AcceptFriend, error) {
+	res, err := ec.unmarshalInputAcceptFriend(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNBeat2graphqlᚋgraphᚋmodelᚐBeat(ctx context.Context, sel ast.SelectionSet, v model.Beat) graphql.Marshaler {
 	return ec._Beat(ctx, sel, &v)
 }
@@ -6442,6 +6631,11 @@ func (ec *executionContext) marshalNComment2ᚖgraphqlᚋgraphᚋmodelᚐComment
 	return ec._Comment(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNDenyFriend2graphqlᚋgraphᚋmodelᚐDenyFriend(ctx context.Context, v any) (model.DenyFriend, error) {
+	res, err := ec.unmarshalInputDenyFriend(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6538,6 +6732,11 @@ func (ec *executionContext) unmarshalNNewComment2graphqlᚋgraphᚋmodelᚐNewCo
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNNewFriend2graphqlᚋgraphᚋmodelᚐNewFriend(ctx context.Context, v any) (model.NewFriend, error) {
+	res, err := ec.unmarshalInputNewFriend(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNNewUser2graphqlᚋgraphᚋmodelᚐNewUser(ctx context.Context, v any) (model.NewUser, error) {
 	res, err := ec.unmarshalInputNewUser(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6587,6 +6786,50 @@ func (ec *executionContext) unmarshalNUpdateUsername2graphqlᚋgraphᚋmodelᚐU
 
 func (ec *executionContext) marshalNUser2graphqlᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚕᚖgraphqlᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUser2ᚖgraphqlᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNUser2ᚖgraphqlᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
@@ -6852,14 +7095,6 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalOAcceptFriend2ᚖgraphqlᚋgraphᚋmodelᚐAcceptFriend(ctx context.Context, v any) (*model.AcceptFriend, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputAcceptFriend(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6888,22 +7123,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
-}
-
-func (ec *executionContext) unmarshalODenyFriend2ᚖgraphqlᚋgraphᚋmodelᚐDenyFriend(ctx context.Context, v any) (*model.DenyFriend, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputDenyFriend(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalONewFriend2ᚖgraphqlᚋgraphᚋmodelᚐNewFriend(ctx context.Context, v any) (*model.NewFriend, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputNewFriend(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

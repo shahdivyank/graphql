@@ -1,7 +1,3 @@
-# GraphQL schema example
-#
-# https://gqlgen.com/getting-started/
-
 scalar UUID
 
 type User {
@@ -41,17 +37,19 @@ type Friend {
   beta: User!
   timestamp: Int!
   status: Int!
+  sender: UUID!
 }
 
 type Query {
   beats: [Beat!]!
+  users(name: String!): [User!]!
 
   user(id: UUID!): User!
   beatdrop(id: UUID!): Beat!
   comments(id: UUID!): [Comment!]!
   beatdrops(id: UUID!): [Beat!]!
 
-  friends(id: UUID!): [Friend!]!
+  friends(id: UUID!, status: Int!): [Friend!]!
 }
 
 input AcceptFriend {
@@ -107,7 +105,7 @@ type Mutation {
   update_bio(input: UpdateBio!): String!
   update_username(input: UpdateUsername!): String!
 
-  add_friend(input: NewFriend): String!
-  accept_friend(input: AcceptFriend): String!
-  deny_friend(input: DenyFriend): String!
+  add_friend(input: NewFriend!): String!
+  accept_friend(input: AcceptFriend!): String!
+  deny_friend(input: DenyFriend!): String!
 }

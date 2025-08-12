@@ -132,7 +132,7 @@ func (r *mutationResolver) UpdateUsername(ctx context.Context, input model.Updat
 }
 
 // AddFriend is the resolver for the add_friend field.
-func (r *mutationResolver) AddFriend(ctx context.Context, input *model.NewFriend) (string, error) {
+func (r *mutationResolver) AddFriend(ctx context.Context, input model.NewFriend) (string, error) {
 	id := uuid.New()
 
 	var user model.User
@@ -149,16 +149,23 @@ func (r *mutationResolver) AddFriend(ctx context.Context, input *model.NewFriend
 		log.Fatalf("Error querying user: %v", err)
 	}
 
+	sender := user.ID
+
+	if user.ID.String() < friend.ID.String() {
+		user, friend = friend, user
+	}
+
 	friendship := &model.Friend{
 		ID:        id,
 		Alpha:     &user,
 		Beta:      &friend,
 		Timestamp: int32(time.Now().Unix()),
+		Sender:    sender,
 		Status:    0,
 	}
 
-	_, err = r.db.Exec(context.Background(), `INSERT INTO friends (id, alpha, beta, timestamp, status) VALUES ($1, $2, $3, $4, $5)`,
-		friendship.ID, friendship.Alpha.ID, friendship.Beta.ID, friendship.Timestamp, friendship.Status)
+	_, err = r.db.Exec(context.Background(), `INSERT INTO friends (id, alpha, beta, timestamp, status, sender) VALUES ($1, $2, $3, $4, $5, $6)`,
+		friendship.ID, friendship.Alpha.ID, friendship.Beta.ID, friendship.Timestamp, friendship.Status, friendship.Sender)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -168,7 +175,7 @@ func (r *mutationResolver) AddFriend(ctx context.Context, input *model.NewFriend
 }
 
 // AcceptFriend is the resolver for the accept_friend field.
-func (r *mutationResolver) AcceptFriend(ctx context.Context, input *model.AcceptFriend) (string, error) {
+func (r *mutationResolver) AcceptFriend(ctx context.Context, input model.AcceptFriend) (string, error) {
 	_, err := r.db.Exec(context.Background(), `UPDATE friends SET status = 1 WHERE id = $1;`, input.ID)
 
 	if err != nil {
@@ -179,7 +186,7 @@ func (r *mutationResolver) AcceptFriend(ctx context.Context, input *model.Accept
 }
 
 // DenyFriend is the resolver for the deny_friend field.
-func (r *mutationResolver) DenyFriend(ctx context.Context, input *model.DenyFriend) (string, error) {
+func (r *mutationResolver) DenyFriend(ctx context.Context, input model.DenyFriend) (string, error) {
 	_, err := r.db.Exec(context.Background(), `UPDATE friends SET status = -1 WHERE id = $1;`, input.ID)
 
 	if err != nil {
@@ -187,7 +194,6 @@ func (r *mutationResolver) DenyFriend(ctx context.Context, input *model.DenyFrie
 	}
 
 	return "ok", nil
-
 }
 
 // Beats is the resolver for the beats field.
@@ -247,6 +253,35 @@ func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
 	}
 
 	return beats, nil
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context, name string) ([]*model.User, error) {
+	rows, err := r.db.Query(context.Background(), `
+		SELECT id, name, username, bio, photo 
+		FROM users 
+		WHERE name ILIKE '%' || $1 || '%'
+   			OR username ILIKE '%' || $1 || '%'`, name)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	defer rows.Close()
+
+	var users []*model.User
+
+	for rows.Next() {
+		var user model.User
+
+		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Bio, &user.Photo); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+
+		users = append(users, &user)
+	}
+
+	return users, nil
 }
 
 // User is the resolver for the user field.
@@ -395,13 +430,13 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 }
 
 // Friends is the resolver for the friends field.
-func (r *queryResolver) Friends(ctx context.Context, id uuid.UUID) ([]*model.Friend, error) {
+func (r *queryResolver) Friends(ctx context.Context, id uuid.UUID, status int32) ([]*model.Friend, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT u.id, u.name, u.username, u.bio, u.photo, f.status
+		SELECT u.id, u.name, u.username, u.bio, u.photo, f.status, f.sender
 		FROM friends f
 		JOIN users u 
 		  ON u.id = CASE WHEN f.alpha = $1 THEN f.beta ELSE f.alpha END
-		WHERE f.alpha = $1 OR f.beta = $1;`, id)
+		WHERE (f.alpha = $1 OR f.beta = $1) AND f.status = $2`, id, status)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -421,6 +456,7 @@ func (r *queryResolver) Friends(ctx context.Context, id uuid.UUID) ([]*model.Fri
 			&friend.Beta.Bio,
 			&friend.Beta.Photo,
 			&friend.Status,
+			&friend.Sender,
 		); err != nil {
 			return nil, fmt.Errorf("scan failed: %w", err)
 		}

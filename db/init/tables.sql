@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS friends (
     beta UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     timestamp INT NOT NULL,
     status INT NOT NULL,
+    sender UUID NOT NULL,
     CONSTRAINT user_pair_unique UNIQUE (alpha, beta),
     CONSTRAINT user_pair_check CHECK (alpha > beta)
 );

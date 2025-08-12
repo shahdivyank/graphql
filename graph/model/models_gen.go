@@ -40,6 +40,7 @@ type Friend struct {
 	Beta      *User     `json:"beta"`
 	Timestamp int32     `json:"timestamp"`
 	Status    int32     `json:"status"`
+	Sender    uuid.UUID `json:"sender"`
 }
 
 type Mutation struct {
