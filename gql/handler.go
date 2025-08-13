@@ -25,8 +25,6 @@ func Query(connection *pgxpool.Pool ) http.Handler {
 		Cache: lru.New[string](100),
 	})
 
-	
-
 	return srv
 }
 

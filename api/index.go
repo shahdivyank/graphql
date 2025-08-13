@@ -8,16 +8,16 @@ import (
 
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-
 	connection := database.Connect()
-
 	defer connection.Close()
+
+	srv := gql.Query(connection)
 
 	if r.URL.Path == "/" {
 		gql.Playground().ServeHTTP(w, r)
 	}
 	if r.URL.Path == "/query" {
-		gql.Query(connection).ServeHTTP(w, r)
+		srv.ServeHTTP(w, r)
 	} else {
 		http.NotFound(w, r)
 	}
