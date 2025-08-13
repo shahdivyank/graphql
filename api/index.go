@@ -13,23 +13,23 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 	"github.com/vektah/gqlparser/v2/ast"
 )
  
 func Handler(w http.ResponseWriter, r *http.Request) {
 	POSTGRES_URL := os.Getenv("POSTGRES_URL")
 
-	pool, err := pgxpool.New(context.Background(), POSTGRES_URL)
+	connection, err := pgx.Connect(context.Background(), POSTGRES_URL)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
 		os.Exit(1)
 	}
 
-	defer pool.Close()
+	defer connection.Close(context.Background())
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: graph.NewResolver(pool)}))
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: graph.NewResolver(connection)}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})

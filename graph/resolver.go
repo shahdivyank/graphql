@@ -3,7 +3,7 @@ package graph
 import (
 	"graphql/graph/model"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
 
 // This file will not be regenerated automatically.
@@ -12,10 +12,10 @@ import (
 
 type Resolver struct{
 	comments []*model.Comment
-	db *pgxpool.Pool
+	db *pgx.Conn
 }
 
-func NewResolver (db *pgxpool.Pool) *Resolver {
+func NewResolver (db *pgx.Conn) *Resolver {
 	return &Resolver{
 		comments: []*model.Comment{},
 		db: db,
