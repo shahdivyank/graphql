@@ -11,6 +11,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	connection := database.Connect()
 
+	defer connection.Close()
+
 	if r.URL.Path == "/" {
 		gql.Playground().ServeHTTP(w, r)
 	}
