@@ -8,7 +8,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -26,8 +25,4 @@ func Query(connection *pgxpool.Pool ) http.Handler {
 	})
 
 	return srv
-}
-
-func Playground() http.Handler {
-	return playground.Handler("GraphQL playground", "/query")
 }
