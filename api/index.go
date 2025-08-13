@@ -11,7 +11,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -42,8 +41,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	switch r.URL.Path {
-		case "/":
-			playground.Handler("GraphQL playground", "/query").ServeHTTP(w, r)
 		case "/query":
 			srv.ServeHTTP(w, r)
 		default:
