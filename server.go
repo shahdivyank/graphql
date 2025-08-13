@@ -21,14 +21,11 @@ import (
 const defaultPort = "8080"
 
 func main() {
-
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	POSTGRES_URL := os.Getenv("POSTGRES_URL")
-
-	pool, err := pgxpool.New(context.Background(), POSTGRES_URL)
+	pool, err := pgxpool.New(context.Background(), os.Getenv("POSTGRES_URL"))
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
