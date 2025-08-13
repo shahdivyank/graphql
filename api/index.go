@@ -15,13 +15,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	srv := gql.Query(connection)
 
-	if r.URL.Path == "/" {
-		playground.Handler("GraphQL playground", "/query").ServeHTTP(w, r)
-	}
-	if r.URL.Path == "/query" {
-		srv.ServeHTTP(w, r)
-	} else {
-		http.NotFound(w, r)
+	switch r.URL.Path {
+		case "/":
+			playground.Handler("GraphQL playground", "/query").ServeHTTP(w, r)
+		case "/query":
+			srv.ServeHTTP(w, r)
+		default: 
+			http.NotFound(w, r)
 	}
 }
 
