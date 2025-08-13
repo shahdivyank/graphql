@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/joho/godotenv"
 )
 
@@ -17,10 +16,9 @@ func main() {
 	}
 
 	connection := database.Connect()
-
 	defer connection.Close()
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/", gql.Playground())
 	http.Handle("/query", gql.Query(connection))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", "8080")
