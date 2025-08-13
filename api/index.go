@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"graphql/graph"
-	"log"
 	"net/http"
 	"os"
 
@@ -42,9 +41,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		Cache: lru.New[string](100),
 	})
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	// Directly serve based on path — no global http.Handle
+	switch r.URL.Path {
+		case "/":
+			playground.Handler("GraphQL playground", "/query").ServeHTTP(w, r)
+		case "/query":
+			srv.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+	}
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", "3000")
-	log.Fatal(http.ListenAndServe(":3000", nil))
 }
