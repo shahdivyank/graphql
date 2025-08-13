@@ -23,7 +23,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	connection, err := pgx.Connect(context.Background(), POSTGRES_URL)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Unable to create connection: %v\n", err)
 		os.Exit(1)
 	}
 
