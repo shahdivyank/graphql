@@ -14,15 +14,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	"github.com/vektah/gqlparser/v2/ast"
 )
  
 func Handler(w http.ResponseWriter, r *http.Request) {
-  if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
 	POSTGRES_URL := os.Getenv("POSTGRES_URL")
 
 	pool, err := pgxpool.New(context.Background(), POSTGRES_URL)
