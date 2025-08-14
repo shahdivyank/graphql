@@ -10,6 +10,14 @@ type AcceptFriend struct {
 	ID uuid.UUID `json:"id"`
 }
 
+type Activity struct {
+	ID        uuid.UUID `json:"id"`
+	User      *User     `json:"user"`
+	Content   string    `json:"content"`
+	Timestamp int32     `json:"timestamp"`
+	Beat      *Beat     `json:"beat"`
+}
+
 type Beat struct {
 	ID          uuid.UUID `json:"id"`
 	User        *User     `json:"user"`
@@ -20,6 +28,7 @@ type Beat struct {
 	Description string    `json:"description"`
 	Longitude   float64   `json:"longitude"`
 	Latitude    float64   `json:"latitude"`
+	Image       string    `json:"image"`
 }
 
 type Comment struct {
@@ -54,6 +63,7 @@ type NewBeat struct {
 	Description string    `json:"description"`
 	Longitude   float64   `json:"longitude"`
 	Latitude    float64   `json:"latitude"`
+	Image       string    `json:"image"`
 }
 
 type NewComment struct {

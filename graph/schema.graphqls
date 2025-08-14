@@ -29,6 +29,7 @@ type Beat {
   description: String!
   longitude: Float!
   latitude: Float!
+  image: String!
 }
 
 type Friend {
@@ -38,6 +39,14 @@ type Friend {
   timestamp: Int!
   status: Int!
   sender: UUID!
+}
+
+type Activity {
+  id: UUID!
+  user: User!
+  content: String!
+  timestamp: Int!
+  beat: Beat!
 }
 
 type Query {
@@ -50,6 +59,8 @@ type Query {
   beatdrops(id: UUID!): [Beat!]!
 
   friends(id: UUID!, status: Int!): [Friend!]!
+
+  activity(id: UUID!): [Activity!]!
 }
 
 input AcceptFriend {
@@ -73,6 +84,7 @@ input NewBeat {
   description: String!
   longitude: Float!
   latitude: Float!
+  image: String!
 }
 
 input NewUser {

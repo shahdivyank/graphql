@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS beats (
     artist VARCHAR(255) NOT NULL,
     description VARCHAR(255) NOT NULL,
     longitude FLOAT NOT NULL,
-    latitude FLOAT NOT NULL
+    latitude FLOAT NOT NULL,
+    image TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS comments (

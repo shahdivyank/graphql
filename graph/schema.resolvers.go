@@ -35,11 +35,12 @@ func (r *mutationResolver) AddBeat(ctx context.Context, input model.NewBeat) (*m
 		Location:    input.Location,
 		Longitude:   input.Longitude,
 		Latitude:    input.Latitude,
+		Image:       input.Image,
 		Timestamp:   int32(time.Now().Unix()),
 	}
 
-	_, err = r.db.Exec(context.Background(), `INSERT INTO beats (id, userid, song, artist, description, location, longitude, latitude, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-		beatdrop.ID, beatdrop.User.ID, beatdrop.Song, beatdrop.Artist, beatdrop.Description, beatdrop.Location, beatdrop.Longitude, beatdrop.Latitude, beatdrop.Timestamp)
+	_, err = r.db.Exec(context.Background(), `INSERT INTO beats (id, userid, song, artist, description, location, longitude, latitude, image, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		beatdrop.ID, beatdrop.User.ID, beatdrop.Song, beatdrop.Artist, beatdrop.Description, beatdrop.Location, beatdrop.Longitude, beatdrop.Latitude, beatdrop.Image, beatdrop.Timestamp)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -209,6 +210,7 @@ func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
 		b.description,
 		b.longitude,
 		b.latitude,
+		b.image,
 		u.id,
 		u.name,
 		u.username,
@@ -238,6 +240,7 @@ func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
 			&beat.Description,
 			&beat.Longitude,
 			&beat.Latitude,
+			&beat.Image,
 			&beat.User.ID,
 			&beat.User.Name,
 			&beat.User.Username,
@@ -312,6 +315,7 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		b.description,
 		b.longitude,
 		b.latitude,
+		b.image,
 		u.id,
 		u.name,
 		u.username,
@@ -327,6 +331,7 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		&beat.Description,
 		&beat.Longitude,
 		&beat.Latitude,
+		&beat.Image,
 		&beat.User.ID,
 		&beat.User.Name,
 		&beat.User.Username,
@@ -392,7 +397,8 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 		artist,
 		description,
 		longitude,
-		latitude
+		latitude,
+		image
 	FROM beats WHERE userid = $1;`, id)
 
 	if err != nil {
@@ -415,6 +421,7 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 			&beat.Description,
 			&beat.Longitude,
 			&beat.Latitude,
+			&beat.Image,
 		); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
@@ -468,6 +475,52 @@ func (r *queryResolver) Friends(ctx context.Context, id uuid.UUID, status int32)
 	}
 
 	return friends, nil
+}
+
+// Activity is the resolver for the activity field.
+func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Activity, error) {
+	rows, err := r.db.Query(context.Background(), `
+	 SELECT
+        c.id,
+        c.timestamp,
+		b.id, 
+		b.image,
+        u.id,
+        u.name,
+        u.username,
+        u.bio,
+        c.comment
+    FROM comments c
+    JOIN beats b ON c.beatid = b.id
+	JOIN users u ON c.userid = u.id
+    WHERE c.userid != $1`, id)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	defer rows.Close()
+
+	var activities []*model.Activity
+
+	for rows.Next() {
+		var activity model.Activity
+		activity.User = &model.User{}
+		activity.Beat = &model.Beat{}
+
+		if err := rows.Scan(
+			&activity.ID, &activity.Timestamp, &activity.Beat.ID, &activity.Beat.Image, &activity.User.ID, &activity.User.Name, &activity.User.Username, &activity.User.Bio, &activity.Content); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+
+		activities = append(activities, &activity)
+	}
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	return activities, nil
 }
 
 // Mutation returns MutationResolver implementation.
