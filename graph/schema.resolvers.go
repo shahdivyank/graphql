@@ -36,7 +36,7 @@ func (r *mutationResolver) AddBeat(ctx context.Context, input model.NewBeat) (*m
 		Longitude:   input.Longitude,
 		Latitude:    input.Latitude,
 		Image:       input.Image,
-		Timestamp:   int32(time.Now().Unix()),
+		Timestamp:   time.Now().UTC(),
 	}
 
 	_, err = r.db.Exec(context.Background(), `INSERT INTO beats (id, userid, song, artist, description, location, longitude, latitude, image, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
@@ -62,6 +62,7 @@ func (r *mutationResolver) AddNewUser(ctx context.Context, input model.NewUser) 
 		Friends:   0,
 		Settings:  `{}`,
 		Photo:     "",
+		Timestamp: time.Now().UTC(),
 	}
 
 	_, err := r.db.Exec(context.Background(), `INSERT INTO users (id, name, username, bio, beatdrops, friends, settings, photo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -94,7 +95,7 @@ func (r *mutationResolver) AddComment(ctx context.Context, input model.NewCommen
 
 	comment := &model.Comment{
 		ID:        id,
-		Timestamp: int32(time.Now().Unix()),
+		Timestamp: time.Now().UTC(),
 		User:      &user,
 		Beat:      &beat,
 		Comment:   input.Comment,
@@ -152,20 +153,16 @@ func (r *mutationResolver) AddFriend(ctx context.Context, input model.NewFriend)
 
 	sender := user.ID
 
-	if user.ID.String() < friend.ID.String() {
-		user, friend = friend, user
-	}
-
 	friendship := &model.Friend{
 		ID:        id,
 		Alpha:     &user,
 		Beta:      &friend,
-		Timestamp: int32(time.Now().Unix()),
+		Timestamp: time.Now().UTC(),
 		Sender:    sender,
 		Status:    0,
 	}
 
-	_, err = r.db.Exec(context.Background(), `INSERT INTO friends (id, alpha, beta, timestamp, status, sender) VALUES ($1, $2, $3, $4, $5, $6)`,
+	_, err = r.db.Exec(context.Background(), `INSERT INTO friends (id, alpha, beta, timestamp, status, sender) VALUES ($1, GREATEST($2::uuid, $3::uuid), LEAST($2::uuid, $3::uuid), $4, $5, $6)`,
 		friendship.ID, friendship.Alpha.ID, friendship.Beta.ID, friendship.Timestamp, friendship.Status, friendship.Sender)
 
 	if err != nil {
@@ -197,67 +194,6 @@ func (r *mutationResolver) DenyFriend(ctx context.Context, input model.DenyFrien
 	return "ok", nil
 }
 
-// Beats is the resolver for the beats field.
-func (r *queryResolver) Beats(ctx context.Context) ([]*model.Beat, error) {
-	rows, err := r.db.Query(context.Background(), `
-	SELECT 
-		b.id,
-		b.userid,
-		b.timestamp,
-		b.location,
-		b.song,
-		b.artist,
-		b.description,
-		b.longitude,
-		b.latitude,
-		b.image,
-		u.id,
-		u.name,
-		u.username,
-		u.bio
-	FROM beats b
-	JOIN users u ON b.userid = u.id
-	`)
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
-	}
-
-	defer rows.Close()
-
-	var beats []*model.Beat
-
-	for rows.Next() {
-		var beat model.Beat
-		beat.User = &model.User{}
-
-		if err := rows.Scan(&beat.ID,
-			&beat.User.ID,
-			&beat.Timestamp,
-			&beat.Location,
-			&beat.Song,
-			&beat.Artist,
-			&beat.Description,
-			&beat.Longitude,
-			&beat.Latitude,
-			&beat.Image,
-			&beat.User.ID,
-			&beat.User.Name,
-			&beat.User.Username,
-			&beat.User.Bio); err != nil {
-			log.Fatalf("Error scanning row: %v", err)
-		}
-
-		beats = append(beats, &beat)
-	}
-
-	if err != nil {
-		log.Fatalf("Error querying user: %v", err)
-	}
-
-	return beats, nil
-}
-
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, name string) ([]*model.User, error) {
 	rows, err := r.db.Query(context.Background(), `
@@ -287,10 +223,67 @@ func (r *queryResolver) Users(ctx context.Context, name string) ([]*model.User, 
 	return users, nil
 }
 
+// Beats is the resolver for the beats field.
+func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat, error) {
+	rows, err := r.db.Query(context.Background(), `
+	SELECT 
+        b.id, b.timestamp, b.location, b.song, b.artist, b.description,
+        b.longitude, b.latitude, b.image,
+        u.id, u.name, u.username, u.bio
+    FROM beats b
+    JOIN users u ON b.userid = u.id
+    JOIN friends f
+        ON (
+            (f.alpha = $1 AND f.beta = b.userid) OR
+            (f.beta = $1 AND f.alpha = b.userid)
+        )
+    WHERE f.status = 1
+	ORDER BY b.timestamp DESC;
+	`, id)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
+	}
+
+	defer rows.Close()
+
+	var beats []*model.Beat
+
+	for rows.Next() {
+		var beat model.Beat
+		beat.User = &model.User{}
+
+		if err := rows.Scan(
+			&beat.ID,
+			&beat.Timestamp,
+			&beat.Location,
+			&beat.Song,
+			&beat.Artist,
+			&beat.Description,
+			&beat.Longitude,
+			&beat.Latitude,
+			&beat.Image,
+			&beat.User.ID,
+			&beat.User.Name,
+			&beat.User.Username,
+			&beat.User.Bio); err != nil {
+			log.Fatalf("Error scanning row: %v", err)
+		}
+
+		beats = append(beats, &beat)
+	}
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	return beats, nil
+}
+
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	var user model.User
-	err := r.db.QueryRow(context.Background(), "SELECT id, name, username, bio FROM users WHERE id = $1", id).Scan(&user.ID, &user.Name, &user.Username, &user.Bio)
+	err := r.db.QueryRow(context.Background(), "SELECT id, name, username, bio, timestamp FROM users WHERE id = $1", id).Scan(&user.ID, &user.Name, &user.Username, &user.Bio, &user.Timestamp)
 
 	if err != nil {
 		log.Fatalf("Error querying user: %v", err)
@@ -439,7 +432,7 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 // Friends is the resolver for the friends field.
 func (r *queryResolver) Friends(ctx context.Context, id uuid.UUID, status int32) ([]*model.Friend, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT u.id, u.name, u.username, u.bio, u.photo, f.status, f.sender
+		SELECT f.id, u.id, u.name, u.username, u.bio, u.photo, f.status, f.sender
 		FROM friends f
 		JOIN users u 
 		  ON u.id = CASE WHEN f.alpha = $1 THEN f.beta ELSE f.alpha END
@@ -457,6 +450,7 @@ func (r *queryResolver) Friends(ctx context.Context, id uuid.UUID, status int32)
 		friend.Beta = &model.User{}
 
 		if err := rows.Scan(
+			&friend.ID,
 			&friend.Beta.Name,
 			&friend.Beta.Name,
 			&friend.Beta.Username,

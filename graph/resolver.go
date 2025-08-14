@@ -10,14 +10,14 @@ import (
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
-type Resolver struct{
+type Resolver struct {
 	comments []*model.Comment
-	db *pgxpool.Pool
+	db       *pgxpool.Pool
 }
 
-func NewResolver (db *pgxpool.Pool) *Resolver {
+func NewResolver(db *pgxpool.Pool) *Resolver {
 	return &Resolver{
 		comments: []*model.Comment{},
-		db: db,
+		db:       db,
 	}
 }

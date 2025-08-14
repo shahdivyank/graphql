@@ -13,7 +13,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-func Query(connection *pgxpool.Pool ) http.Handler {
+func Query(connection *pgxpool.Pool) http.Handler {
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: graph.NewResolver(connection)}))
 
 	srv.AddTransport(transport.Options{})

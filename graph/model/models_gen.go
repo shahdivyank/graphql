@@ -3,6 +3,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -14,7 +16,7 @@ type Activity struct {
 	ID        uuid.UUID `json:"id"`
 	User      *User     `json:"user"`
 	Content   string    `json:"content"`
-	Timestamp int32     `json:"timestamp"`
+	Timestamp time.Time `json:"timestamp"`
 	Beat      *Beat     `json:"beat"`
 }
 
@@ -22,7 +24,7 @@ type Beat struct {
 	ID          uuid.UUID `json:"id"`
 	User        *User     `json:"user"`
 	Location    string    `json:"location"`
-	Timestamp   int32     `json:"timestamp"`
+	Timestamp   time.Time `json:"timestamp"`
 	Song        string    `json:"song"`
 	Artist      string    `json:"artist"`
 	Description string    `json:"description"`
@@ -33,7 +35,7 @@ type Beat struct {
 
 type Comment struct {
 	ID        uuid.UUID `json:"id"`
-	Timestamp int32     `json:"timestamp"`
+	Timestamp time.Time `json:"timestamp"`
 	User      *User     `json:"user"`
 	Beat      *Beat     `json:"beat"`
 	Comment   string    `json:"comment"`
@@ -47,7 +49,7 @@ type Friend struct {
 	ID        uuid.UUID `json:"id"`
 	Alpha     *User     `json:"alpha"`
 	Beta      *User     `json:"beta"`
-	Timestamp int32     `json:"timestamp"`
+	Timestamp time.Time `json:"timestamp"`
 	Status    int32     `json:"status"`
 	Sender    uuid.UUID `json:"sender"`
 }
@@ -105,4 +107,5 @@ type User struct {
 	Friends   int32     `json:"friends"`
 	Settings  string    `json:"settings"`
 	Photo     string    `json:"photo"`
+	Timestamp time.Time `json:"timestamp"`
 }
