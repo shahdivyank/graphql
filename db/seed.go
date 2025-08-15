@@ -2,48 +2,130 @@ package database
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	"graphql/graph/model"
+	"io"
 	"log"
 	"os"
-	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
-func main() {
-
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
-	POSTGRES_URL := os.Getenv("POSTGRES_URL")
-	ctx := context.Background()
-
-	pool, err := pgxpool.New(ctx, POSTGRES_URL)
+func insert_users(db *pgxpool.Pool) {
+	file, err := os.Open("db/users.json")
 
 	if err != nil {
+		log.Fatalf("Failed to open file: %v", err)
+	}
+
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatalf("Failed to read file: %v", err)
+	}
+
+	var users []model.User
+
+	if err := json.Unmarshal(data, &users); err != nil {
 		log.Fatal(err)
 	}
 
-	defer pool.Close()
+	for _, user := range users {
+		_, err = db.Exec(context.Background(), `INSERT INTO users (id, name, username, bio, beatdrops, friends, settings, photo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			user.ID, user.Name, user.Username, user.Bio, user.Beatdrops, user.Friends, "{}", user.Photo)
 
-	id := uuid.New()
+		if err != nil {
+			log.Fatalf("Failed to insert user: %v", err)
+		}
+	}
+}
 
-	_, err = pool.Exec(ctx, `INSERT INTO users (id, name, username, bio) VALUES ($1, $2, $3, $4)`,
-		id, "Divyank Shah", "webdiv", "UCR '25")
+type Comment struct {
+	ID string
+	Userid string
+	Beatid string
+	Timestamp string
+	Comment string
+}
+
+func insert_comments(db *pgxpool.Pool) {
+	file, err := os.Open("db/comments.json")
 
 	if err != nil {
+		log.Fatalf("Failed to open file: %v", err)
+	}
+
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatalf("Failed to read file: %v", err)
+	}
+
+	var comments []Comment
+
+	if err := json.Unmarshal(data, &comments); err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = pool.Exec(ctx, `INSERT INTO beats (id, userid, timestamp, location, song, artist, description, longitude, latitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-		uuid.New(), id, int32(time.Now().Unix()), "Fremont, CA", "Heaven", "Ailee", "The origins of Beatdrop", 37.12345, 120.12345)
+	for _, comment := range comments {
+
+		_, err = db.Exec(context.Background(), `INSERT INTO comments (id, userid, beatid, timestamp, comment) VALUES ($1, $2, $3, $4, $5)`,
+			comment.ID, comment.Userid, comment.Beatid, comment.Timestamp, comment.Comment)
+
+		if err != nil {
+			log.Fatalf("Failed to insert comments: %v", err)
+		}
+	}
+}
+
+type Beat struct  {
+	ID string
+	Userid string
+	Timestamp string
+	Location string
+	Song string
+	Artist string
+	Description string
+	Longitude float32
+	Latitude float32
+	Image string
+	Comments int32
+}
+
+func insert_beats(db *pgxpool.Pool) {
+	file, err := os.Open("db/beats.json")
 
 	if err != nil {
+		log.Fatalf("Failed to open file: %v", err)
+	}
+
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatalf("Failed to read file: %v", err)
+	}
+
+	var beats []Beat
+
+	if err := json.Unmarshal(data, &beats); err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Database Seeded Successfully")
+	for _, beat := range beats {
+		_, err = db.Exec(context.Background(), `INSERT INTO beats (id, userid, song, artist, description, location, longitude, latitude, image, timestamp, comments) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+			beat.ID, beat.Userid, beat.Song, beat.Artist, beat.Description, beat.Location, beat.Longitude, beat.Latitude, beat.Image, beat.Timestamp, beat.Comments)
+
+		if err != nil {
+			log.Fatalf("Failed to insert user: %v", err)
+		}
+	}
+}
+
+func Seed(db *pgxpool.Pool) {
+	insert_users(db)
+	insert_beats(db)
+	insert_comments(db)
 }
