@@ -491,6 +491,7 @@ func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Ac
         u.name,
         u.username,
         u.bio,
+		u.photo,
         c.comment
     FROM comments c
     JOIN beats b ON c.beatid = b.id
@@ -512,7 +513,7 @@ func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Ac
 		activity.Beat = &model.Beat{}
 
 		if err := rows.Scan(
-			&activity.ID, &activity.Timestamp, &activity.Beat.ID, &activity.Beat.Image, &activity.User.ID, &activity.User.Name, &activity.User.Username, &activity.User.Bio, &activity.Content); err != nil {
+			&activity.ID, &activity.Timestamp, &activity.Beat.ID, &activity.Beat.Image, &activity.User.ID, &activity.User.Name, &activity.User.Username, &activity.User.Bio, &activity.User.Photo, &activity.Content); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
