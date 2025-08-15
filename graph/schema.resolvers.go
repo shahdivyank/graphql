@@ -230,7 +230,7 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 	SELECT 
         b.id, b.timestamp, b.location, b.song, b.artist, b.description,
         b.longitude, b.latitude, b.image, b.comments,
-        u.id, u.name, u.username, u.bio
+        u.id, u.name, u.username, u.bio, u.photo
     FROM beats b
     JOIN users u ON b.userid = u.id
     LEFT JOIN friends f
@@ -268,7 +268,9 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 			&beat.User.ID,
 			&beat.User.Name,
 			&beat.User.Username,
-			&beat.User.Bio); err != nil {
+			&beat.User.Bio,
+			&beat.User.Photo,
+			); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
