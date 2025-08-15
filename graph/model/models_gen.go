@@ -31,6 +31,7 @@ type Beat struct {
 	Longitude   float64   `json:"longitude"`
 	Latitude    float64   `json:"latitude"`
 	Image       string    `json:"image"`
+	Comments    int32     `json:"comments"`
 }
 
 type Comment struct {

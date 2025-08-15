@@ -37,10 +37,11 @@ func (r *mutationResolver) AddBeat(ctx context.Context, input model.NewBeat) (*m
 		Latitude:    input.Latitude,
 		Image:       input.Image,
 		Timestamp:   time.Now().UTC(),
+		Comments:    0,
 	}
 
-	_, err = r.db.Exec(context.Background(), `INSERT INTO beats (id, userid, song, artist, description, location, longitude, latitude, image, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-		beatdrop.ID, beatdrop.User.ID, beatdrop.Song, beatdrop.Artist, beatdrop.Description, beatdrop.Location, beatdrop.Longitude, beatdrop.Latitude, beatdrop.Image, beatdrop.Timestamp)
+	_, err = r.db.Exec(context.Background(), `INSERT INTO beats (id, userid, song, artist, description, location, longitude, latitude, image, timestamp, comments) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+		beatdrop.ID, beatdrop.User.ID, beatdrop.Song, beatdrop.Artist, beatdrop.Description, beatdrop.Location, beatdrop.Longitude, beatdrop.Latitude, beatdrop.Image, beatdrop.Timestamp, beatdrop.Comments)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -228,16 +229,16 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 	rows, err := r.db.Query(context.Background(), `
 	SELECT 
         b.id, b.timestamp, b.location, b.song, b.artist, b.description,
-        b.longitude, b.latitude, b.image,
+        b.longitude, b.latitude, b.image, b.comments,
         u.id, u.name, u.username, u.bio
     FROM beats b
     JOIN users u ON b.userid = u.id
-    JOIN friends f
+    LEFT JOIN friends f
         ON (
             (f.alpha = $1 AND f.beta = b.userid) OR
             (f.beta = $1 AND f.alpha = b.userid)
         )
-    WHERE f.status = 1
+    WHERE f.status = 1 OR b.userid = $1
 	ORDER BY b.timestamp DESC;
 	`, id)
 
@@ -263,6 +264,7 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 			&beat.Longitude,
 			&beat.Latitude,
 			&beat.Image,
+			&beat.Comments,
 			&beat.User.ID,
 			&beat.User.Name,
 			&beat.User.Username,
@@ -309,6 +311,7 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		b.longitude,
 		b.latitude,
 		b.image,
+		b.comments,
 		u.id,
 		u.name,
 		u.username,
@@ -325,6 +328,7 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		&beat.Longitude,
 		&beat.Latitude,
 		&beat.Image,
+		&beat.Comments,
 		&beat.User.ID,
 		&beat.User.Name,
 		&beat.User.Username,
@@ -350,7 +354,9 @@ func (r *queryResolver) Comments(ctx context.Context, id uuid.UUID) ([]*model.Co
         c.comment
     FROM comments c
     JOIN users u ON c.userid = u.id
-    WHERE c.beatid = $1;`, id)
+    WHERE c.beatid = $1
+	ORDER BY c.timestamp DESC;
+	`, id)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -391,7 +397,8 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 		description,
 		longitude,
 		latitude,
-		image
+		image,
+		comments
 	FROM beats WHERE userid = $1;`, id)
 
 	if err != nil {
@@ -415,6 +422,7 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 			&beat.Longitude,
 			&beat.Latitude,
 			&beat.Image,
+			&beat.Comments,
 		); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
@@ -487,7 +495,8 @@ func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Ac
     FROM comments c
     JOIN beats b ON c.beatid = b.id
 	JOIN users u ON c.userid = u.id
-    WHERE c.userid != $1`, id)
+    WHERE c.userid != $1
+	ORDER BY c.timestamp DESC;`, id)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)

@@ -32,6 +32,7 @@ type Beat {
   longitude: Float!
   latitude: Float!
   image: String!
+  comments: Int!
 }
 
 type Friend {

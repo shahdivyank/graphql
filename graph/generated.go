@@ -59,6 +59,7 @@ type ComplexityRoot struct {
 
 	Beat struct {
 		Artist      func(childComplexity int) int
+		Comments    func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Image       func(childComplexity int) int
@@ -203,6 +204,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Beat.Artist(childComplexity), true
+
+	case "Beat.comments":
+		if e.complexity.Beat.Comments == nil {
+			break
+		}
+
+		return e.complexity.Beat.Comments(childComplexity), true
 
 	case "Beat.description":
 		if e.complexity.Beat.Description == nil {
@@ -1230,6 +1238,8 @@ func (ec *executionContext) fieldContext_Activity_beat(_ context.Context, field 
 				return ec.fieldContext_Beat_latitude(ctx, field)
 			case "image":
 				return ec.fieldContext_Beat_image(ctx, field)
+			case "comments":
+				return ec.fieldContext_Beat_comments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
 		},
@@ -1697,6 +1707,50 @@ func (ec *executionContext) fieldContext_Beat_image(_ context.Context, field gra
 	return fc, nil
 }
 
+func (ec *executionContext) _Beat_comments(ctx context.Context, field graphql.CollectedField, obj *model.Beat) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Beat_comments(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comments, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Beat_comments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Beat",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_id(ctx, field)
 	if err != nil {
@@ -1908,6 +1962,8 @@ func (ec *executionContext) fieldContext_Comment_beat(_ context.Context, field g
 				return ec.fieldContext_Beat_latitude(ctx, field)
 			case "image":
 				return ec.fieldContext_Beat_image(ctx, field)
+			case "comments":
+				return ec.fieldContext_Beat_comments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
 		},
@@ -2322,6 +2378,8 @@ func (ec *executionContext) fieldContext_Mutation_add_beat(ctx context.Context, 
 				return ec.fieldContext_Beat_latitude(ctx, field)
 			case "image":
 				return ec.fieldContext_Beat_image(ctx, field)
+			case "comments":
+				return ec.fieldContext_Beat_comments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
 		},
@@ -2891,6 +2949,8 @@ func (ec *executionContext) fieldContext_Query_beats(ctx context.Context, field 
 				return ec.fieldContext_Beat_latitude(ctx, field)
 			case "image":
 				return ec.fieldContext_Beat_image(ctx, field)
+			case "comments":
+				return ec.fieldContext_Beat_comments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
 		},
@@ -3043,6 +3103,8 @@ func (ec *executionContext) fieldContext_Query_beatdrop(ctx context.Context, fie
 				return ec.fieldContext_Beat_latitude(ctx, field)
 			case "image":
 				return ec.fieldContext_Beat_image(ctx, field)
+			case "comments":
+				return ec.fieldContext_Beat_comments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
 		},
@@ -3187,6 +3249,8 @@ func (ec *executionContext) fieldContext_Query_beatdrops(ctx context.Context, fi
 				return ec.fieldContext_Beat_latitude(ctx, field)
 			case "image":
 				return ec.fieldContext_Beat_image(ctx, field)
+			case "comments":
+				return ec.fieldContext_Beat_comments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beat", field.Name)
 		},
@@ -6258,6 +6322,11 @@ func (ec *executionContext) _Beat(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "image":
 			out.Values[i] = ec._Beat_image(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "comments":
+			out.Values[i] = ec._Beat_comments(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

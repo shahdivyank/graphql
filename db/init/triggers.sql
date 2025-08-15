@@ -68,3 +68,36 @@ AFTER UPDATE OR DELETE ON friends
 FOR EACH ROW
 EXECUTE FUNCTION decrement_friends_on_remove();
 
+-- Increment Beat Comments Trigger
+CREATE OR REPLACE FUNCTION increment_beat_comments()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE beats
+    SET comments = comments + 1
+    WHERE id = NEW.beatid;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_increment_comments
+AFTER INSERT ON comments
+FOR EACH ROW
+EXECUTE FUNCTION increment_beat_comments();
+
+-- Decrement Beat Comments Trigger
+CREATE OR REPLACE FUNCTION decrement_beat_comments()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE beats
+    SET comments = comments - 1
+    WHERE id = OLD.beatid;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_decrement_comments
+AFTER DELETE ON comments
+FOR EACH ROW
+EXECUTE FUNCTION decrement_beat_comments();
