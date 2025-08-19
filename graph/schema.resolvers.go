@@ -270,7 +270,7 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 			&beat.User.Username,
 			&beat.User.Bio,
 			&beat.User.Photo,
-			); err != nil {
+		); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
@@ -501,7 +501,7 @@ func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Ac
     FROM comments c
     JOIN beats b ON c.beatid = b.id
 	JOIN users u ON c.userid = u.id
-    WHERE c.userid != $1 AND c.timestamp >= date_trunc('day', now() - interval '1 day') + interval '11 hours 11 minutes'
+    WHERE c.userid != $1
 	ORDER BY c.timestamp DESC;`, id)
 
 	if err != nil {
