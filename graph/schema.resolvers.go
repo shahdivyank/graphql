@@ -238,7 +238,7 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
             (f.alpha = $1 AND f.beta = b.userid) OR
             (f.beta = $1 AND f.alpha = b.userid)
         )
-    WHERE f.status = 1 OR b.userid = $1
+    WHERE f.status = 1 OR b.userid = $1 AND b.timestamp >= date_trunc('day', now() - interval '1 day') + interval '11 hours 11 minutes'
 	ORDER BY b.timestamp DESC;
 	`, id)
 
@@ -501,7 +501,7 @@ func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Ac
     FROM comments c
     JOIN beats b ON c.beatid = b.id
 	JOIN users u ON c.userid = u.id
-    WHERE c.userid != $1
+    WHERE c.userid != $1 AND c.timestamp >= date_trunc('day', now() - interval '1 day') + interval '11 hours 11 minutes'
 	ORDER BY c.timestamp DESC;`, id)
 
 	if err != nil {
