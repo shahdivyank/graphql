@@ -317,7 +317,8 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		u.id,
 		u.name,
 		u.username,
-		u.bio
+		u.bio,
+		u.photo
 	FROM beats b
 	JOIN users u ON b.userid = u.id
 	WHERE b.id = $1;`, id).Scan(&beat.ID,
@@ -334,7 +335,9 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		&beat.User.ID,
 		&beat.User.Name,
 		&beat.User.Username,
-		&beat.User.Bio)
+		&beat.User.Bio,
+		&beat.User.Photo,
+	)
 
 	if err != nil {
 		log.Fatalf("Error querying user: %v", err)
