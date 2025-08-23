@@ -232,7 +232,7 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 	SELECT 
         b.id, b.timestamp, b.location, b.song, b.artist, b.description,
         b.longitude, b.latitude, b.image, b.comments,
-        u.id, u.name, u.username, u.bio
+        u.id, u.name, u.username, u.bio, u.photo
     FROM beats b
     JOIN users u ON b.userid = u.id
     LEFT JOIN friends f
@@ -240,7 +240,7 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
             (f.alpha = $1 AND f.beta = b.userid) OR
             (f.beta = $1 AND f.alpha = b.userid)
         )
-    WHERE f.status = 1 OR b.userid = $1
+    WHERE f.status = 1 OR b.userid = $1 AND b.timestamp >= date_trunc('day', now() - interval '1 day') + interval '11 hours 11 minutes'
 	ORDER BY b.timestamp DESC;
 	`, id)
 
@@ -270,7 +270,9 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 			&beat.User.ID,
 			&beat.User.Name,
 			&beat.User.Username,
-			&beat.User.Bio); err != nil {
+			&beat.User.Bio,
+			&beat.User.Photo,
+		); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
@@ -329,7 +331,8 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		u.id,
 		u.name,
 		u.username,
-		u.bio
+		u.bio,
+		u.photo
 	FROM beats b
 	JOIN users u ON b.userid = u.id
 	WHERE b.id = $1;`, id).Scan(&beat.ID,
@@ -346,7 +349,9 @@ func (r *queryResolver) Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat
 		&beat.User.ID,
 		&beat.User.Name,
 		&beat.User.Username,
-		&beat.User.Bio)
+		&beat.User.Bio,
+		&beat.User.Photo,
+	)
 
 	if err != nil {
 		log.Fatalf("Error querying user: %v", err)
@@ -505,6 +510,7 @@ func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Ac
         u.name,
         u.username,
         u.bio,
+		u.photo,
         c.comment
     FROM comments c
     JOIN beats b ON c.beatid = b.id
@@ -526,7 +532,7 @@ func (r *queryResolver) Activity(ctx context.Context, id uuid.UUID) ([]*model.Ac
 		activity.Beat = &model.Beat{}
 
 		if err := rows.Scan(
-			&activity.ID, &activity.Timestamp, &activity.Beat.ID, &activity.Beat.Image, &activity.User.ID, &activity.User.Name, &activity.User.Username, &activity.User.Bio, &activity.Content); err != nil {
+			&activity.ID, &activity.Timestamp, &activity.Beat.ID, &activity.Beat.Image, &activity.User.ID, &activity.User.Name, &activity.User.Username, &activity.User.Bio, &activity.User.Photo, &activity.Content); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 

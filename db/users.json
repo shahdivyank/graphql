@@ -1,0 +1,122 @@
+[
+    {
+        "id": "a78705c8-bbbe-45af-805f-f19a401c1b63",
+        "name": "Divyank Shah",
+        "username": "webdiv",
+        "bio": "developer",
+        "beatdrops": 0,
+        "friends": 0,
+        "photo": "https://picsum.photos/seed/alice/200",
+        "timestamp": "2025-08-14T10:00:00Z"
+    },
+    {
+        "id": "b476db55-6222-4952-ad5e-4c13e3d9ad5c",
+        "name": "Andrew Khadder",
+        "username": "andrew",
+        "bio": "developer.",
+        "beatdrops": 0,
+        "friends": 0,
+        "photo": "https://picsum.photos/seed/alice/200",
+        "timestamp": "2025-08-14T10:00:00Z"
+    },
+    {
+        "id": "1f7e8d4d-8d7f-4e4b-bf39-5d3a88c0b1e1",
+        "name": "Alice Johnson",
+        "username": "alicej",
+        "bio": "Loves music and coffee.",
+        "beatdrops": 3,
+        "friends": 4,
+        "photo": "https://picsum.photos/seed/alice/200",
+        "timestamp": "2025-08-14T10:00:00Z"
+    },
+    {
+        "id": "2b5f4f39-6df9-4bfb-9817-82b0563e1029",
+        "name": "Bob Smith",
+        "username": "bobsmith",
+        "bio": "Guitarist in a local band.",
+        "beatdrops": 2,
+        "friends": 5,
+        "photo": "https://picsum.photos/seed/bob/200",
+        "timestamp": "2025-08-14T10:05:00Z"
+    },
+    {
+        "id": "3f01c42c-b876-4c72-95c6-7e12f1a87099",
+        "name": "Charlie Davis",
+        "username": "charlied",
+        "bio": "Music producer and DJ.",
+        "beatdrops": 4,
+        "friends": 6,
+        "photo": "https://picsum.photos/seed/charlie/200",
+        "timestamp": "2025-08-14T10:10:00Z"
+    },
+    {
+        "id": "4bbbc413-17d7-44e1-bec0-7f52b3c82ef5",
+        "name": "Diana Perez",
+        "username": "dianap",
+        "bio": "Pop music enthusiast.",
+        "beatdrops": 1,
+        "friends": 2,
+        "photo": "https://picsum.photos/seed/diana/200",
+        "timestamp": "2025-08-14T10:15:00Z"
+    },
+    {
+        "id": "5a55c7d8-5b5a-47a0-8221-0b0c94a776d1",
+        "name": "Ethan Lee",
+        "username": "ethanlee",
+        "bio": "Loves discovering indie artists.",
+        "beatdrops": 2,
+        "friends": 3,
+        "photo": "https://picsum.photos/seed/ethan/200",
+        "timestamp": "2025-08-14T10:20:00Z"
+    },
+    {
+        "id": "6d03c77d-f11b-48b0-9b1b-1c5a9c52cc63",
+        "name": "Fiona Green",
+        "username": "fionag",
+        "bio": "Music blogger and critic.",
+        "beatdrops": 1,
+        "friends": 4,
+        "photo": "https://picsum.photos/seed/fiona/200",
+        "timestamp": "2025-08-14T10:25:00Z"
+    },
+    {
+        "id": "7c73e6cb-f2c3-4f6a-a930-41791d98f857",
+        "name": "George Harris",
+        "username": "georgeh",
+        "bio": "Hip-hop fan.",
+        "beatdrops": 3,
+        "friends": 2,
+        "photo": "https://picsum.photos/seed/george/200",
+        "timestamp": "2025-08-14T10:30:00Z"
+    },
+    {
+        "id": "8b4c85a0-15d3-4a7a-a5e2-3a331cd9346f",
+        "name": "Hannah White",
+        "username": "hannahw",
+        "bio": "Concert photographer.",
+        "beatdrops": 2,
+        "friends": 5,
+        "photo": "https://picsum.photos/seed/hannah/200",
+        "timestamp": "2025-08-14T10:35:00Z"
+    },
+    {
+        "id": "9f3c6fbd-7ad4-4b1f-9fcd-31593a31b2ec",
+        "name": "Ian Martinez",
+        "username": "ianm",
+        "bio": "Sound engineer.",
+        "beatdrops": 1,
+        "friends": 3,
+        "photo": "https://picsum.photos/seed/ian/200",
+        "timestamp": "2025-08-14T10:40:00Z"
+    },
+    {
+        "id": "afc81a2a-7433-4a65-a20a-8b22a60f02e8",
+        "name": "Julia Brown",
+        "username": "juliab",
+        "bio": "Music teacher and pianist.",
+        "beatdrops": 1,
+        "friends": 1,
+        "photo": "https://picsum.photos/seed/julia/200",
+        "timestamp": "2025-08-14T10:45:00Z"
+    }
+]
