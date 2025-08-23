@@ -55,19 +55,21 @@ func (r *mutationResolver) AddNewUser(ctx context.Context, input model.NewUser) 
 	id := uuid.New()
 
 	user := &model.User{
-		ID:        id,
-		Name:      input.Name,
-		Username:  input.Username,
-		Bio:       input.Bio,
-		Beatdrops: 0,
-		Friends:   0,
-		Settings:  `{}`,
-		Photo:     "",
-		Timestamp: time.Now().UTC(),
+		ID:         id,
+		Name:       input.Name,
+		FirebaseID: input.FirebaseID,
+		Phone:      input.Phone,
+		Username:   input.Username,
+		Bio:        input.Bio,
+		Beatdrops:  0,
+		Friends:    0,
+		Settings:   `{}`,
+		Photo:      "",
+		Timestamp:  time.Now().UTC(),
 	}
 
-	_, err := r.db.Exec(context.Background(), `INSERT INTO users (id, name, username, bio, beatdrops, friends, settings, photo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		user.ID, user.Name, user.Username, user.Bio, user.Beatdrops, user.Friends, user.Settings, user.Photo)
+	_, err := r.db.Exec(context.Background(), `INSERT INTO users (id, firebase_id, phone, name, username, bio, beatdrops, friends, settings, photo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		user.ID, user.FirebaseID, user.Phone, user.Name, user.Username, user.Bio, user.Beatdrops, user.Friends, user.Settings, user.Photo)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
@@ -198,7 +200,7 @@ func (r *mutationResolver) DenyFriend(ctx context.Context, input model.DenyFrien
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, name string) ([]*model.User, error) {
 	rows, err := r.db.Query(context.Background(), `
-		SELECT id, name, username, bio, photo 
+		SELECT id, phone, name, username, bio, photo 
 		FROM users 
 		WHERE name ILIKE '%' || $1 || '%'
    			OR username ILIKE '%' || $1 || '%'`, name)
@@ -214,7 +216,7 @@ func (r *queryResolver) Users(ctx context.Context, name string) ([]*model.User, 
 	for rows.Next() {
 		var user model.User
 
-		if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Bio, &user.Photo); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Phone, &user.Username, &user.Bio, &user.Photo); err != nil {
 			log.Fatalf("Error scanning row: %v", err)
 		}
 
@@ -287,7 +289,19 @@ func (r *queryResolver) Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat,
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	var user model.User
-	err := r.db.QueryRow(context.Background(), "SELECT id, name, username, bio, timestamp FROM users WHERE id = $1", id).Scan(&user.ID, &user.Name, &user.Username, &user.Bio, &user.Timestamp)
+	err := r.db.QueryRow(context.Background(), "SELECT id, phone, name, username, bio, timestamp FROM users WHERE id = $1", id).Scan(&user.ID, &user.Phone, &user.Name, &user.Username, &user.Bio, &user.Timestamp)
+
+	if err != nil {
+		log.Fatalf("Error querying user: %v", err)
+	}
+
+	return &user, nil
+}
+
+// UserFirebaseID is the resolver for the userFirebaseID field.
+func (r *queryResolver) UserFirebaseID(ctx context.Context, firebaseID string) (*model.User, error) {
+	var user model.User
+	err := r.db.QueryRow(context.Background(), "SELECT id, firebase_id, phone, name, username, bio, timestamp FROM users WHERE firebase_id = $1", firebaseID).Scan(&user.ID, &user.FirebaseID, &user.Phone, &user.Name, &user.Username, &user.Bio, &user.Timestamp)
 
 	if err != nil {
 		log.Fatalf("Error querying user: %v", err)
