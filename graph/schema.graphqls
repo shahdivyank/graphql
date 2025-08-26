@@ -4,6 +4,8 @@ scalar Time
 type User {
   id: UUID!
   name: String!
+  firebaseID: String!
+  phone: String!
   username: String!
   bio: String!
   beatdrops: Int!
@@ -57,6 +59,7 @@ type Query {
 
   beats(id: UUID!): [Beat!]!
   user(id: UUID!): User!
+  userFirebaseID(firebaseID: String!): User!
   beatdrop(id: UUID!): Beat!
   comments(id: UUID!): [Comment!]!
   beatdrops(id: UUID!): [Beat!]!
@@ -92,6 +95,8 @@ input NewBeat {
 
 input NewUser {
   name: String!
+  firebaseID: String!
+  phone: String!
   username: String!
   bio: String!
 }

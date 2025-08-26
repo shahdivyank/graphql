@@ -100,26 +100,29 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Activity  func(childComplexity int, id uuid.UUID) int
-		Beatdrop  func(childComplexity int, id uuid.UUID) int
-		Beatdrops func(childComplexity int, id uuid.UUID) int
-		Beats     func(childComplexity int, id uuid.UUID) int
-		Comments  func(childComplexity int, id uuid.UUID) int
-		Friends   func(childComplexity int, id uuid.UUID, status int32) int
-		User      func(childComplexity int, id uuid.UUID) int
-		Users     func(childComplexity int, name string) int
+		Activity       func(childComplexity int, id uuid.UUID) int
+		Beatdrop       func(childComplexity int, id uuid.UUID) int
+		Beatdrops      func(childComplexity int, id uuid.UUID) int
+		Beats          func(childComplexity int, id uuid.UUID) int
+		Comments       func(childComplexity int, id uuid.UUID) int
+		Friends        func(childComplexity int, id uuid.UUID, status int32) int
+		User           func(childComplexity int, id uuid.UUID) int
+		UserFirebaseID func(childComplexity int, firebaseID string) int
+		Users          func(childComplexity int, name string) int
 	}
 
 	User struct {
-		Beatdrops func(childComplexity int) int
-		Bio       func(childComplexity int) int
-		Friends   func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Photo     func(childComplexity int) int
-		Settings  func(childComplexity int) int
-		Timestamp func(childComplexity int) int
-		Username  func(childComplexity int) int
+		Beatdrops  func(childComplexity int) int
+		Bio        func(childComplexity int) int
+		FirebaseID func(childComplexity int) int
+		Friends    func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Phone      func(childComplexity int) int
+		Photo      func(childComplexity int) int
+		Settings   func(childComplexity int) int
+		Timestamp  func(childComplexity int) int
+		Username   func(childComplexity int) int
 	}
 }
 
@@ -137,6 +140,7 @@ type QueryResolver interface {
 	Users(ctx context.Context, name string) ([]*model.User, error)
 	Beats(ctx context.Context, id uuid.UUID) ([]*model.Beat, error)
 	User(ctx context.Context, id uuid.UUID) (*model.User, error)
+	UserFirebaseID(ctx context.Context, firebaseID string) (*model.User, error)
 	Beatdrop(ctx context.Context, id uuid.UUID) (*model.Beat, error)
 	Comments(ctx context.Context, id uuid.UUID) ([]*model.Comment, error)
 	Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.Beat, error)
@@ -532,6 +536,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.User(childComplexity, args["id"].(uuid.UUID)), true
 
+	case "Query.userFirebaseID":
+		if e.complexity.Query.UserFirebaseID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userFirebaseID_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserFirebaseID(childComplexity, args["firebaseID"].(string)), true
+
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
@@ -558,6 +574,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.User.Bio(childComplexity), true
 
+	case "User.firebaseID":
+		if e.complexity.User.FirebaseID == nil {
+			break
+		}
+
+		return e.complexity.User.FirebaseID(childComplexity), true
+
 	case "User.friends":
 		if e.complexity.User.Friends == nil {
 			break
@@ -578,6 +601,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.Name(childComplexity), true
+
+	case "User.phone":
+		if e.complexity.User.Phone == nil {
+			break
+		}
+
+		return e.complexity.User.Phone(childComplexity), true
 
 	case "User.photo":
 		if e.complexity.User.Photo == nil {
@@ -909,6 +939,17 @@ func (ec *executionContext) field_Query_friends_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_userFirebaseID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "firebaseID", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["firebaseID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1070,6 +1111,10 @@ func (ec *executionContext) fieldContext_Activity_user(_ context.Context, field 
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -1334,6 +1379,10 @@ func (ec *executionContext) fieldContext_Beat_user(_ context.Context, field grap
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -1882,6 +1931,10 @@ func (ec *executionContext) fieldContext_Comment_user(_ context.Context, field g
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -2102,6 +2155,10 @@ func (ec *executionContext) fieldContext_Friend_alpha(_ context.Context, field g
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -2166,6 +2223,10 @@ func (ec *executionContext) fieldContext_Friend_beta(_ context.Context, field gr
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -2441,6 +2502,10 @@ func (ec *executionContext) fieldContext_Mutation_add_new_user(ctx context.Conte
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -2858,6 +2923,10 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -3012,6 +3081,10 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_id(ctx, field)
 			case "name":
 				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
 			case "username":
 				return ec.fieldContext_User_username(ctx, field)
 			case "bio":
@@ -3038,6 +3111,85 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_user_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_userFirebaseID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_userFirebaseID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserFirebaseID(rctx, fc.Args["firebaseID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgraphqlᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_userFirebaseID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "firebaseID":
+				return ec.fieldContext_User_firebaseID(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "bio":
+				return ec.fieldContext_User_bio(ctx, field)
+			case "beatdrops":
+				return ec.fieldContext_User_beatdrops(ctx, field)
+			case "friends":
+				return ec.fieldContext_User_friends(ctx, field)
+			case "settings":
+				return ec.fieldContext_User_settings(ctx, field)
+			case "photo":
+				return ec.fieldContext_User_photo(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_User_timestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_userFirebaseID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3612,6 +3764,94 @@ func (ec *executionContext) _User_name(ctx context.Context, field graphql.Collec
 }
 
 func (ec *executionContext) fieldContext_User_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_firebaseID(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_firebaseID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FirebaseID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_firebaseID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_phone(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_phone(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Phone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_phone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -6095,7 +6335,7 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj any) 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "username", "bio"}
+	fieldsInOrder := [...]string{"name", "firebaseID", "phone", "username", "bio"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6109,6 +6349,20 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj any) 
 				return it, err
 			}
 			it.Name = data
+		case "firebaseID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firebaseID"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FirebaseID = data
+		case "phone":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Phone = data
 		case "username":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -6659,6 +6913,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "userFirebaseID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userFirebaseID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "beatdrop":
 			field := field
 
@@ -6818,6 +7094,16 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "name":
 			out.Values[i] = ec._User_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "firebaseID":
+			out.Values[i] = ec._User_firebaseID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "phone":
+			out.Values[i] = ec._User_phone(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
