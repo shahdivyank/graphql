@@ -404,7 +404,12 @@ func (r *queryResolver) Beatdrops(ctx context.Context, id uuid.UUID) ([]*model.B
 		latitude,
 		image,
 		comments
-	FROM beats WHERE userid = $1;`, id)
+	FROM 
+		beats 
+	WHERE 
+		userid = $1
+		AND timestamp >= DATE_TRUNC('month', CURRENT_DATE)
+		AND timestamp < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month');`, id)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query failed: %v\n", err)
